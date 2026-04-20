@@ -1,0 +1,1621 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scope Judgment Study</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink:#1a1a2e; --paper:#f5f0e8; --accent:#c0392b;
+  --muted:#7a7060; --rule:#d4cfc4; --card:#fffdf8;
+  --green:#27ae60; --red:#e74c3c; --orange:#f39c12;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:"DM Mono",monospace;background:var(--paper);color:var(--ink);
+  min-height:100vh;display:flex;align-items:center;justify-content:center;padding:2rem;}
+body::before{content:"";position:fixed;inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 27px,var(--rule) 27px,var(--rule) 28px);
+  opacity:0.35;pointer-events:none;z-index:0;}
+.container{position:relative;z-index:1;width:100%;max-width:760px;}
+.header{text-align:center;margin-bottom:2.5rem;animation:fadeDown .6s ease both;}
+.header .label{font-size:.65rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:.4rem;}
+.header h1{font-family:"DM Serif Display",serif;font-size:2rem;line-height:1.2;}
+.header h1 em{font-style:italic;color:var(--accent);}
+.card{background:var(--card);border:1px solid var(--rule);border-radius:2px;
+  padding:2rem 2.5rem;box-shadow:4px 4px 0 var(--rule);animation:fadeUp .5s ease both;}
+.screen{display:none;} .screen.active{display:block;}
+.screen-title{font-family:"DM Serif Display",serif;font-size:1.5rem;margin-bottom:1rem;}
+p{font-size:.8rem;line-height:1.9;color:var(--muted);margin-bottom:.8rem;}
+ul{font-size:.78rem;line-height:2.1;color:var(--muted);padding-left:1.2rem;margin-bottom:1.2rem;}
+.badge{display:inline-block;padding:.2rem .7rem;font-size:.6rem;letter-spacing:.15em;
+  text-transform:uppercase;border:1px solid var(--rule);margin-bottom:1.2rem;color:var(--muted);}
+.badge.baseline{border-color:var(--orange);color:var(--orange);}
+.badge.main{border-color:var(--green);color:var(--green);}
+.sentence-box{background:var(--paper);border:1px dashed var(--rule);
+  padding:1rem 1.5rem;margin-bottom:1.5rem;text-align:center;}
+.sentence-text{font-family:"DM Serif Display",serif;font-size:1.3rem;font-style:italic;color:var(--ink);}
+.question-text{font-size:.78rem;color:var(--ink);margin-bottom:1rem;line-height:1.6;}
+.img-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem;}
+.img-choice{border:2px solid var(--rule);background:var(--card);padding:.6rem;
+  transition:all .18s ease;display:flex;flex-direction:column;align-items:center;gap:.5rem;}
+.img-choice svg{width:100%;height:auto;pointer-events:none;}
+.img-caption{font-size:.68rem;color:var(--muted);line-height:1.5;text-align:center;padding:0 .3rem;}
+.img-choice.clickable{cursor:pointer;}
+.img-choice.clickable:hover{border-color:var(--ink);}
+.img-choice.selected{border-color:var(--accent);background:#fff5f5;}
+.meaning-btns{display:grid;grid-template-columns:1fr 1fr;gap:.7rem;margin-bottom:1.5rem;}
+.meaning-btns.six-opts{grid-template-columns:1fr 1fr 1fr;}
+.meaning-btn{padding:.85rem .5rem;border:2px solid var(--rule);background:var(--card);
+  font-family:"DM Mono",monospace;font-size:.75rem;cursor:pointer;
+  transition:all .15s ease;line-height:1.4;text-align:center;}
+.meaning-btn:hover{border-color:var(--ink);}
+.meaning-btn.sel-a   {background:#2980b9;border-color:#2980b9;color:white;}
+.meaning-btn.sel-b   {background:#8e44ad;border-color:#8e44ad;color:white;}
+.meaning-btn.sel-both{background:var(--green);border-color:var(--green);color:white;}
+.meaning-btn.sel-other{background:var(--muted);border-color:var(--muted);color:white;}
+.audio-section{display:flex;flex-direction:column;align-items:center;gap:.8rem;
+  padding:1.2rem;background:var(--paper);border:1px dashed var(--rule);margin-bottom:1.5rem;}
+.play-btn{width:58px;height:58px;border-radius:50%;border:2px solid var(--ink);
+  background:var(--card);cursor:pointer;font-size:1.3rem;
+  display:flex;align-items:center;justify-content:center;transition:all .15s ease;}
+.play-btn:hover{background:var(--ink);color:var(--paper);}
+.play-btn.playing{background:var(--accent);border-color:var(--accent);color:white;}
+.play-btn.played{border-color:var(--green);}
+.audio-hint{font-size:.65rem;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;}
+.audio-wave{display:flex;gap:3px;align-items:center;height:18px;}
+.audio-wave span{width:3px;background:var(--muted);border-radius:2px;height:4px;}
+.audio-wave.active span{animation:wave .8s ease-in-out infinite;}
+.audio-wave.active span:nth-child(1){animation-delay:0s}
+.audio-wave.active span:nth-child(2){animation-delay:.1s}
+.audio-wave.active span:nth-child(3){animation-delay:.2s}
+.audio-wave.active span:nth-child(4){animation-delay:.3s}
+.audio-wave.active span:nth-child(5){animation-delay:.2s}
+.audio-wave.active span:nth-child(6){animation-delay:.1s}
+.audio-wave.active span:nth-child(7){animation-delay:0s}
+@keyframes wave{0%,100%{height:4px}50%{height:15px}}
+.progress-wrap{margin-bottom:1.8rem;}
+.progress-meta{display:flex;justify-content:space-between;font-size:.7rem;
+  letter-spacing:.1em;color:var(--muted);margin-bottom:.35rem;}
+.progress-bar{height:3px;background:var(--rule);border-radius:2px;overflow:hidden;}
+.progress-fill{height:100%;background:var(--accent);border-radius:2px;
+  transition:width .5s cubic-bezier(.4,0,.2,1);}
+.divider{height:1px;background:var(--rule);margin:1.2rem 0;}
+.btn{display:inline-block;padding:.85rem 2rem;font-family:"DM Mono",monospace;
+  font-size:.75rem;letter-spacing:.18em;text-transform:uppercase;
+  border:none;cursor:pointer;transition:background .15s;}
+.btn-primary{background:var(--ink);color:var(--paper);}
+.btn-primary:hover{background:var(--accent);}
+.btn-primary:disabled{opacity:.3;pointer-events:none;}
+.btn-green{background:var(--green);color:white;}
+.btn-green:hover{opacity:.88;}
+.btn-full{width:100%;}
+.fail-icon{font-size:3rem;text-align:center;margin-bottom:1rem;}
+.fail-box{background:#fff5f5;border:1px solid #f5c6c6;padding:1rem 1.2rem;
+  margin-bottom:1.2rem;font-size:.78rem;line-height:1.8;color:#8b2020;}
+.result-row{display:flex;justify-content:space-between;align-items:center;
+  padding:.55rem .8rem;background:var(--paper);border:1px solid var(--rule);
+  font-size:.72rem;margin-bottom:.35rem;}
+.result-row .sentence{color:var(--ink);flex:1;font-size:.68rem;}
+.result-row .response{font-weight:500;color:var(--accent);margin-left:.8rem;white-space:nowrap;}
+.scale-wrap{display:flex;flex-direction:column;gap:.6rem;margin-bottom:1.5rem;}
+.scale-buttons{display:flex;gap:.4rem;}
+.scale-btn{flex:1;aspect-ratio:1;border:1.5px solid var(--rule);background:var(--card);
+  font-family:"DM Mono",monospace;font-size:.85rem;cursor:pointer;
+  transition:all .15s ease;color:var(--muted);}
+.scale-btn:hover{border-color:var(--ink);color:var(--ink);}
+.scale-btn.selected{background:var(--ink);border-color:var(--ink);color:var(--paper);}
+.scale-anchors{display:flex;justify-content:space-between;font-size:.6rem;color:var(--muted);}
+@keyframes fadeDown{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+<div class="container">
+
+<!-- INTRO -->
+
+<div class="screen active" id="screen-intro">
+  <div class="header">
+    <div class="label">Linguistics Research Study</div>
+    <h1>Sentence <em>Meaning</em> Study</h1>
+  </div>
+  <div class="card">
+    <p class="screen-title">Welcome</p>
+    <p>In this study, you will read and listen to English sentences and make judgments about their meanings.</p>
+    <ul>
+      <li>First, complete <strong>2 warm-up questions</strong> about sentence meanings.</li>
+      <li>Then, listen to sentences and choose which picture(s) match what you hear.</li>
+      <li>Read carefully and trust your instincts.</li>
+      <li style="color:#e74c3c;font-weight:500;">You may go back and change your answer <strong>once</strong> during the entire study.</li>
+    </ul>
+    <div class="divider"></div>
+    <button class="btn btn-primary" onclick="startExperiment()">→ Begin</button>
+  </div>
+</div>
+
+<!-- EXPERIMENT -->
+
+<div class="screen" id="screen-experiment">
+  <div class="header">
+    <div class="label">Sentence Meaning Study</div>
+    <h1>Read &amp; <em>Judge</em></h1>
+  </div>
+  <div class="progress-wrap">
+    <div class="progress-meta">
+      <span id="progress-text">Trial 1</span>
+      <span id="progress-pct">0%</span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+  </div>
+  <div class="card" id="trial-card">
+    <div class="badge" id="trial-badge">Warm-up</div>
+
+<!-- BASELINE LAYOUT -->
+<div id="baseline-layout">
+  <div class="sentence-box">
+    <div class="sentence-text" id="baseline-sentence"></div>
+  </div>
+  <div class="img-grid" id="baseline-img-grid"></div>
+  <div class="question-text">Which picture(s) can match the meaning of this sentence?</div>
+  <div class="meaning-btns" style="grid-template-columns:1fr 1fr 1fr;">
+    <button class="meaning-btn" id="btn-a"    onclick="selectMeaning('a')">Picture A only</button>
+    <button class="meaning-btn" id="btn-b"    onclick="selectMeaning('b')">Picture B only</button>
+    <button class="meaning-btn" id="btn-both" onclick="selectMeaning('both')">Both A and B</button>
+  </div>
+
+</div>
+
+<!-- MAIN AUDIO LAYOUT -->
+<div id="main-layout" style="display:none">
+  <div class="audio-section">
+    <button class="play-btn" id="play-btn" onclick="playAudio()">&#9654;</button>
+    <div class="audio-wave" id="audio-wave">
+      <span></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span>
+    </div>
+    <div class="audio-hint" id="audio-hint">Click to play sentence</div>
+  </div>
+  <div id="main-sentence-display" style="font-size:.85rem;color:#7d3c00;background:#fff3cd;border:2px solid #f39c12;border-left:5px solid #e67e22;padding:1rem 1.2rem;margin-bottom:1.2rem;line-height:1.7;font-weight:500;display:none;">
+    <strong>Sentence:</strong> <span id="main-sentence-text" style="font-style:italic;"></span>
+  </div>
+  <div id="main-compare-hint" style="display:none;font-size:.8rem;color:#1e3a5f;background:#e3f0ff;border:2px solid #2980b9;border-left:5px solid #1a6fa8;padding:.9rem 1.2rem;margin-bottom:1.2rem;line-height:1.65;">
+    🎧 <strong>Compare the two recordings.</strong> They differ mainly in the <strong>second half</strong> — listen carefully to the part after <span style="font-style:italic;">"…he did"</span> in each, and compare the prosody (pause / intonation).<br>
+    <span style="font-size:.72rem;color:#555;">You can go back and forth between these two trials to revise your answer.</span>
+  </div>
+  <div class="img-grid" id="main-img-grid"></div>
+  <div style="font-size:.65rem;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:.8rem;">
+    Which picture(s) match the sentence you heard?
+  </div>
+  <div class="meaning-btns" style="grid-template-columns:1fr 1fr 1fr;">
+    <button class="meaning-btn" id="main-btn-a"       onclick="selectMainChoice('a')">Picture A only</button>
+    <button class="meaning-btn" id="main-btn-b"       onclick="selectMainChoice('b')">Picture B only</button>
+    <button class="meaning-btn" id="main-btn-both"    onclick="selectMainChoice('both')">Both A and B</button>
+    <button class="meaning-btn" id="main-btn-asure"   onclick="selectMainChoice('asure')">Definitely A,<br>not sure about B</button>
+    <button class="meaning-btn" id="main-btn-bsure"   onclick="selectMainChoice('bsure')">Definitely B,<br>not sure about A</button>
+    <button class="meaning-btn" id="main-btn-other"   onclick="selectMainChoice('other')">Other</button>
+  </div>
+  <div id="main-other-wrap" style="display:none;margin-top:.5rem;">
+    <textarea id="main-other-input" placeholder="Any other thoughts..."
+      style="width:100%;padding:.8rem;font-family:'DM Mono',monospace;font-size:.75rem;
+      border:1.5px solid var(--rule);background:var(--card);color:var(--ink);
+      resize:vertical;min-height:80px;line-height:1.6;outline:none;"
+      oninput="updateNextBtn()"></textarea>
+  </div>
+</div>
+
+<!-- BASELINE RATING LAYOUT -->
+<div id="baseline-rating-layout" style="display:none">
+  <div class="sentence-box">
+    <div class="sentence-text" id="rating-sentence"></div>
+  </div>
+  <div class="question-text">How natural does this sentence sound?</div>
+  <div class="scale-wrap">
+    <div class="scale-buttons" id="scale-buttons">
+      <button class="scale-btn" onclick="selectScale(1)">1</button>
+      <button class="scale-btn" onclick="selectScale(2)">2</button>
+      <button class="scale-btn" onclick="selectScale(3)">3</button>
+      <button class="scale-btn" onclick="selectScale(4)">4</button>
+      <button class="scale-btn" onclick="selectScale(5)">5</button>
+      <button class="scale-btn" onclick="selectScale(6)">6</button>
+      <button class="scale-btn" onclick="selectScale(7)">7</button>
+    </div>
+    <div class="scale-anchors">
+      <span>1 = Very unnatural</span>
+      <span>7 = Very natural</span>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN RATING AUDIO LAYOUT -->
+<div id="main-rating-audio-layout" style="display:none">
+  <div class="audio-section">
+    <button class="play-btn" id="play-btn-audio" onclick="playAudio()">&#9654;</button>
+    <div class="audio-wave" id="audio-wave-2">
+      <span></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span>
+    </div>
+    <div class="audio-hint" id="audio-hint-2">Click to play sentence</div>
+  </div>
+  <div id="main-audio-sentence-display" style="display:none;font-size:.85rem;color:#7d3c00;background:#fff3cd;border:2px solid #f39c12;border-left:5px solid #e67e22;padding:1rem 1.2rem;margin-bottom:1.2rem;line-height:1.7;font-weight:500;">
+    <strong>Sentence:</strong> <span id="main-audio-sentence-text" style="font-style:italic;"></span>
+  </div>
+  <div class="question-text">How natural does this sentence sound?</div>
+  <div class="scale-wrap">
+    <div class="scale-buttons" id="audio-scale-buttons">
+      <button class="scale-btn" onclick="selectAudioScale(1)">1</button>
+      <button class="scale-btn" onclick="selectAudioScale(2)">2</button>
+      <button class="scale-btn" onclick="selectAudioScale(3)">3</button>
+      <button class="scale-btn" onclick="selectAudioScale(4)">4</button>
+      <button class="scale-btn" onclick="selectAudioScale(5)">5</button>
+      <button class="scale-btn" onclick="selectAudioScale(6)">6</button>
+      <button class="scale-btn" onclick="selectAudioScale(7)">7</button>
+    </div>
+    <div class="scale-anchors">
+      <span>1 = Very unnatural</span>
+      <span>7 = Very natural</span>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN RATING LAYOUT -->
+<div id="main-rating-layout" style="display:none">
+  <div class="sentence-box">
+    <div class="sentence-text" id="main-rating-sentence"></div>
+  </div>
+  <div class="question-text">How natural does this sentence sound?</div>
+  <div class="scale-wrap">
+    <div class="scale-buttons" id="main-scale-buttons">
+      <button class="scale-btn" onclick="selectMainScale(1)">1</button>
+      <button class="scale-btn" onclick="selectMainScale(2)">2</button>
+      <button class="scale-btn" onclick="selectMainScale(3)">3</button>
+      <button class="scale-btn" onclick="selectMainScale(4)">4</button>
+      <button class="scale-btn" onclick="selectMainScale(5)">5</button>
+      <button class="scale-btn" onclick="selectMainScale(6)">6</button>
+      <button class="scale-btn" onclick="selectMainScale(7)">7</button>
+    </div>
+    <div class="scale-anchors">
+      <span>1 = Very unnatural</span>
+      <span>7 = Very natural</span>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN TEXT LAYOUT -->
+<div id="main-text-layout" style="display:none">
+  <div class="sentence-box">
+    <div style="font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:.6rem;">Context</div>
+    <div class="sentence-text" id="text-prompt" style="font-size:1rem;color:var(--muted);margin-bottom:.4rem;"></div>
+    <div class="sentence-text" id="text-sentence"></div>
+  </div>
+  <div class="img-grid" id="main-text-img-grid"></div>
+  <div style="font-size:.65rem;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:.8rem;">
+    Which picture(s) match the sentence?
+  </div>
+  <div class="meaning-btns" style="grid-template-columns:1fr 1fr 1fr;">
+    <button class="meaning-btn" id="text-btn-a"       onclick="selectMainChoice('a')">Picture A only</button>
+    <button class="meaning-btn" id="text-btn-b"       onclick="selectMainChoice('b')">Picture B only</button>
+    <button class="meaning-btn" id="text-btn-both"    onclick="selectMainChoice('both')">Both A and B</button>
+    <button class="meaning-btn" id="text-btn-asure"   onclick="selectMainChoice('asure')">Definitely A,<br>not sure about B</button>
+    <button class="meaning-btn" id="text-btn-bsure"   onclick="selectMainChoice('bsure')">Definitely B,<br>not sure about A</button>
+    <button class="meaning-btn" id="text-btn-other"   onclick="selectMainChoice('other')">Other</button>
+  </div>
+  <div id="text-other-wrap" style="display:none;margin-top:.5rem;">
+    <textarea id="text-other-input" placeholder="Any other thoughts..."
+      style="width:100%;padding:.8rem;font-family:'DM Mono',monospace;font-size:.75rem;
+      border:1.5px solid var(--rule);background:var(--card);color:var(--ink);
+      resize:vertical;min-height:80px;line-height:1.6;outline:none;"
+      oninput="updateNextBtn()"></textarea>
+  </div>
+</div>
+
+<div class="divider"></div>
+<div style="display:flex;gap:.6rem;">
+  <button class="btn" id="back-btn" onclick="goBack()" style="background:var(--paper);color:var(--muted);border:1.5px solid var(--rule);flex:0 0 auto;">← Back</button>
+  <button class="btn btn-primary" id="next-btn" disabled onclick="submitTrial()" style="flex:1;">Confirm →</button>
+</div>
+
+  </div>
+</div>
+
+<!-- FAIL -->
+
+<div class="screen" id="screen-fail">
+  <div class="header">
+    <div class="label">Study Ended</div>
+    <h1>Thank <em>You</em></h1>
+  </div>
+  <div class="card">
+    <div class="fail-icon">🙏</div>
+    <p class="screen-title">We're sorry, you do not qualify for this study.</p>
+    <p>Thank you for your time!</p>
+  </div>
+</div>
+
+<!-- RESULTS -->
+
+<div class="screen" id="screen-results">
+  <div class="header">
+    <div class="label">Study Complete</div>
+    <h1>Thank <em>You!</em></h1>
+  </div>
+  <div class="card">
+    <p class="screen-title">Your Responses</p>
+    <p>You have completed all trials. Here is a summary of your responses.</p>
+    <div id="submit-status" style="font-size:.78rem;margin-bottom:1rem;min-height:1.2rem;"></div>
+    <div style="background:#e8f5e9;border:2px solid #27ae60;padding:1rem 1.2rem;margin-bottom:1.2rem;text-align:center;">
+      <div style="font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;color:#1e8449;margin-bottom:.4rem;">Prolific Completion Code</div>
+      <div style="font-family:'DM Serif Display',serif;font-size:2rem;color:#1e8449;letter-spacing:.15em;">C46X8YE1</div>
+      <div style="font-size:.72rem;color:#555;margin-top:.4rem;">Please copy this code and paste it into Prolific to confirm your participation.</div>
+    </div>
+    <div id="results-grid"></div>
+    <div class="divider"></div>
+    <button class="btn btn-green" onclick="downloadCSV()" style="margin-right:.5rem">&#8595; Download CSV</button>
+  </div>
+</div>
+
+</div>
+
+<script>
+const SVG_nurse_surface = `<svg xmlns="http://www.w3.org/2000/svg" width="420" height="320" viewBox="0 0 420 320">
+  <rect width="420" height="320" fill="#f0f4f0"/>
+  <text x="210" y="26" text-anchor="middle" font-family="Georgia,serif" font-size="13" fill="#555" font-style="italic">"A nurse examined every patient"</text>
+  <text x="210" y="46" text-anchor="middle" font-family="Georgia,serif" font-size="11" fill="#888">(one nurse examined all 3 patients)</text>
+
+  <!-- Nurse (left, with cross symbol) -->
+  <circle cx="63" cy="108" r="20" fill="#f5cba7" stroke="#c0903a" stroke-width="1.5"/>
+  <ellipse cx="57" cy="106" rx="2.5" ry="2.5" fill="#555"/>
+  <ellipse cx="69" cy="106" rx="2.5" ry="2.5" fill="#555"/>
+  <path d="M57 115 Q63 120 69 115" stroke="#a0522d" stroke-width="1.5" fill="none"/>
+  <!-- nurse cap -->
+  <rect x="50" y="86" width="26" height="8" rx="2" fill="white" stroke="#bbb" stroke-width="1"/>
+  <rect x="59" y="82" width="8" height="6" rx="1" fill="white" stroke="#bbb" stroke-width="1"/>
+  <!-- red cross on cap -->
+  <rect x="62" y="83" width="2" height="4" fill="#e74c3c"/>
+  <rect x="61" y="84" width="4" height="2" fill="#e74c3c"/>
+  <!-- body (white uniform) -->
+  <rect x="44" y="128" width="38" height="50" rx="6" fill="white" stroke="#bbb" stroke-width="1.5"/>
+  <!-- red cross on uniform -->
+  <rect x="60" y="138" width="4" height="10" fill="#e74c3c"/>
+  <rect x="57" y="141" width="10" height="4" fill="#e74c3c"/>
+  <!-- arm with stethoscope -->
+  <line x1="82" y1="145" x2="108" y2="150" stroke="#bbb" stroke-width="3" stroke-linecap="round"/>
+  <!-- stethoscope circle -->
+  <circle cx="112" cy="152" r="6" fill="none" stroke="#555" stroke-width="1.5"/>
+  <line x1="30" y1="145" x2="20" y2="158" stroke="#bbb" stroke-width="3" stroke-linecap="round"/>
+  <line x1="55" y1="178" x2="50" y2="214" stroke="#bbb" stroke-width="3" stroke-linecap="round"/>
+  <line x1="71" y1="178" x2="76" y2="214" stroke="#bbb" stroke-width="3" stroke-linecap="round"/>
+  <text x="63" y="238" text-anchor="middle" font-family="Georgia,serif" font-size="11" fill="#555">Nurse</text>
+
+  <defs>
+    <marker id="n1" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><polygon points="0 0,6 3,0 6" fill="#7f8c8d"/></marker>
+    <marker id="n2" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><polygon points="0 0,6 3,0 6" fill="#7f8c8d"/></marker>
+    <marker id="n3" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><polygon points="0 0,6 3,0 6" fill="#7f8c8d"/></marker>
+  </defs>
+
+  <!-- Patient 1 (lying in bed) -->
+  <line x1="122" y1="95" x2="175" y2="88" stroke="#7f8c8d" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#n1)"/>
+  <!-- bed -->
+  <rect x="178" y="96" width="70" height="14" rx="3" fill="#ecf0f1" stroke="#bdc3c7" stroke-width="1.2"/>
+  <rect x="178" y="110" width="70" height="28" rx="2" fill="#d6eaf8" stroke="#aed6f1" stroke-width="1"/>
+  <!-- pillow -->
+  <rect x="230" y="98" width="16" height="10" rx="3" fill="white" stroke="#bdc3c7" stroke-width="1"/>
+  <!-- patient head -->
+  <circle cx="238" cy="93" r="10" fill="#f5cba7" stroke="#c0903a" stroke-width="1.2"/>
+  <ellipse cx="234" cy="92" rx="1.5" ry="1.5" fill="#555"/>
+  <ellipse cx="242" cy="92" rx="1.5" ry="1.5" fill="#555"/>
+  <text x="213" y="152" text-anchor="middle" font-family="Georgia,serif" font-size="10" fill="#555">Patient 1</text>
+
+  <!-- Patient 2 -->
+  <line x1="120" y1="152" x2="175" y2="158" stroke="#7f8c8d" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#n2)"/>
+  <rect x="178" y="162" width="70" height="14" rx="3" fill="#ecf0f1" stroke="#bdc3c7" stroke-width="1.2"/>
+  <rect x="178" y="176" width="70" height="28" rx="2" fill="#d6eaf8" stroke="#aed6f1" stroke-width="1"/>
+  <rect x="230" y="164" width="16" height="10" rx="3" fill="white" stroke="#bdc3c7" stroke-width="1"/>
+  <circle cx="238" cy="159" r="10" fill="#f5cba7" stroke="#c0903a" stroke-width="1.2"/>
+  <ellipse cx="234" cy="158" rx="1.5" ry="1.5" fill="#555"/>
+  <ellipse cx="242" cy="158" rx="1.5" ry="1.5" fill="#555"/>
+  <text x="213" y="218" text-anchor="middle" font-family="Georgia,serif" font-size="10" fill="#555">Patient 2</text>
+
+  <!-- Patient 3 -->
+  <line x1="118" y1="178" x2="174" y2="225" stroke="#7f8c8d" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#n3)"/>
+  <rect x="178" y="228" width="70" height="14" rx="3" fill="#ecf0f1" stroke="#bdc3c7" stroke-width="1.2"/>
+  <rect x="178" y="242" width="70" height="28" rx="2" fill="#d6eaf8" stroke="#aed6f1" stroke-width="1"/>
+  <rect x="230" y="230" width="16" height="10" rx="3" fill="white" stroke="#bdc3c7" stroke-width="1"/>
+  <circle cx="238" cy="225" r="10" fill="#f5cba7" stroke="#c0903a" stroke-width="1.2"/>
+  <ellipse cx="234" cy="224" rx="1.5" ry="1.5" fill="#555"/>
+  <ellipse cx="242" cy="224" rx="1.5" ry="1.5" fill="#555"/>
+  <text x="213" y="283" text-anchor="middle" font-family="Georgia,serif" font-size="10" fill="#555">Patient 3</text>
+
+  <text x="210" y="305" text-anchor="middle" font-family="Georgia,serif" font-size="12" fill="#27ae60" font-weight="bold">1 nurse examined all 3 patients ✓</text>
+</svg>`;
+const SVG_nurse_inverse = `<svg xmlns="http://www.w3.org/2000/svg" width="420" height="320" viewBox="0 0 420 320">
+  <rect width="420" height="320" fill="#fdf0f0"/>
+  <text x="210" y="26" text-anchor="middle" font-family="Georgia,serif" font-size="13" fill="#555" font-style="italic">"A nurse examined every patient"</text>
+  <text x="210" y="46" text-anchor="middle" font-family="Georgia,serif" font-size="11" fill="#888">(each patient was examined by a different nurse)</text>
+
+  <defs>
+    <marker id="n1" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><polygon points="0 0,6 3,0 6" fill="#7f8c8d"/></marker>
+    <marker id="n2" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><polygon points="0 0,6 3,0 6" fill="#7f8c8d"/></marker>
+    <marker id="n3" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><polygon points="0 0,6 3,0 6" fill="#7f8c8d"/></marker>
+  </defs>
+
+  <!-- ── Nurse 1 (top) ── -->
+  <circle cx="62" cy="88" r="15" fill="#f5cba7" stroke="#c0903a" stroke-width="1.2"/>
+  <ellipse cx="57" cy="87" rx="2" ry="2" fill="#555"/>
+  <ellipse cx="67" cy="87" rx="2" ry="2" fill="#555"/>
+  <path d="M57 94 Q62 98 67 94" stroke="#a0522d" stroke-width="1.2" fill="none"/>
+  <!-- cap -->
+  <rect x="51" y="71" width="22" height="7" rx="2" fill="white" stroke="#bbb" stroke-width="1"/>
+  <rect x="59" y="67" width="6" height="5" rx="1" fill="white" stroke="#bbb" stroke-width="1"/>
+  <rect x="61" y="68" width="2" height="3" fill="#e74c3c"/>
+  <rect x="60" y="69" width="4" height="2" fill="#e74c3c"/>
+  <!-- body -->
+  <rect x="48" y="103" width="28" height="38" rx="5" fill="white" stroke="#bbb" stroke-width="1.2"/>
+  <rect x="59" y="110" width="3" height="8" fill="#e74c3c"/>
+  <rect x="56" y="113" width="8" height="3" fill="#e74c3c"/>
+  <!-- arm with stethoscope -->
+  <line x1="76" y1="115" x2="96" y2="112" stroke="#bbb" stroke-width="2.5" stroke-linecap="round"/>
+  <circle cx="100" cy="112" r="5" fill="none" stroke="#555" stroke-width="1.5"/>
+  <line x1="48" y1="115" x2="36" y2="124" stroke="#bbb" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="56" y1="141" x2="52" y2="168" stroke="#bbb" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="68" y1="141" x2="72" y2="168" stroke="#bbb" stroke-width="2.5" stroke-linecap="round"/>
+  <text x="62" y="184" text-anchor="middle" font-family="Georgia,serif" font-size="9" fill="#555">Nurse 1</text>
+
+  <!-- arrow 1 -->
+  <line x1="106" y1="112" x2="160" y2="100" stroke="#7f8c8d" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#n1)"/>
+
+  <!-- Patient 1 (bed, top) -->
+  <rect x="163" y="82" width="70" height="12" rx="3" fill="#ecf0f1" stroke="#bdc3c7" stroke-width="1.2"/>
+  <rect x="163" y="94" width="70" height="26" rx="2" fill="#d6eaf8" stroke="#aed6f1" stroke-width="1"/>
+  <rect x="215" y="84" width="16" height="9" rx="3" fill="white" stroke="#bdc3c7" stroke-width="1"/>
+  <circle cx="223" cy="79" r="10" fill="#f5cba7" stroke="#c0903a" stroke-width="1.2"/>
+  <ellipse cx="219" cy="78" rx="1.5" ry="1.5" fill="#555"/>
+  <ellipse cx="227" cy="78" rx="1.5" ry="1.5" fill="#555"/>
+  <text x="198" y="134" text-anchor="middle" font-family="Georgia,serif" font-size="10" fill="#555">Patient 1</text>
+
+  <!-- ── Nurse 2 (middle) ── -->
+  <circle cx="62" cy="178" r="15" fill="#f5cba7" stroke="#c0903a" stroke-width="1.2"/>
+  <ellipse cx="57" cy="177" rx="2" ry="2" fill="#555"/>
+  <ellipse cx="67" cy="177" rx="2" ry="2" fill="#555"/>
+  <path d="M57 184 Q62 188 67 184" stroke="#a0522d" stroke-width="1.2" fill="none"/>
+  <rect x="51" y="161" width="22" height="7" rx="2" fill="white" stroke="#bbb" stroke-width="1"/>
+  <rect x="59" y="157" width="6" height="5" rx="1" fill="white" stroke="#bbb" stroke-width="1"/>
+  <rect x="61" y="158" width="2" height="3" fill="#e74c3c"/>
+  <rect x="60" y="159" width="4" height="2" fill="#e74c3c"/>
+  <rect x="48" y="193" width="28" height="38" rx="5" fill="white" stroke="#bbb" stroke-width="1.2"/>
+  <rect x="59" y="200" width="3" height="8" fill="#e74c3c"/>
+  <rect x="56" y="203" width="8" height="3" fill="#e74c3c"/>
+  <line x1="76" y1="205" x2="96" y2="202" stroke="#bbb" stroke-width="2.5" stroke-linecap="round"/>
+  <circle cx="100" cy="202" r="5" fill="none" stroke="#555" stroke-width="1.5"/>
+  <line x1="48" y1="205" x2="36" y2="214" stroke="#bbb" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="56" y1="231" x2="52" y2="258" stroke="#bbb" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="68" y1="231" x2="72" y2="258" stroke="#bbb" stroke-width="2.5" stroke-linecap="round"/>
+  <text x="62" y="274" text-anchor="middle" font-family="Georgia,serif" font-size="9" fill="#555">Nurse 2</text>
+
+  <!-- arrow 2 -->
+  <line x1="106" y1="202" x2="160" y2="168" stroke="#7f8c8d" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#n2)"/>
+
+  <!-- Patient 2 (bed, middle) -->
+  <rect x="163" y="152" width="70" height="12" rx="3" fill="#ecf0f1" stroke="#bdc3c7" stroke-width="1.2"/>
+  <rect x="163" y="164" width="70" height="26" rx="2" fill="#d6eaf8" stroke="#aed6f1" stroke-width="1"/>
+  <rect x="215" y="154" width="16" height="9" rx="3" fill="white" stroke="#bdc3c7" stroke-width="1"/>
+  <circle cx="223" cy="149" r="10" fill="#f5cba7" stroke="#c0903a" stroke-width="1.2"/>
+  <ellipse cx="219" cy="148" rx="1.5" ry="1.5" fill="#555"/>
+  <ellipse cx="227" cy="148" rx="1.5" ry="1.5" fill="#555"/>
+  <text x="198" y="204" text-anchor="middle" font-family="Georgia,serif" font-size="10" fill="#555">Patient 2</text>
+
+  <!-- ── Nurse 3 (bottom) ── -->
+  <circle cx="62" cy="248" r="15" fill="#f5cba7" stroke="#c0903a" stroke-width="1.2"/>
+  <ellipse cx="57" cy="247" rx="2" ry="2" fill="#555"/>
+  <ellipse cx="67" cy="247" rx="2" ry="2" fill="#555"/>
+  <path d="M57 254 Q62 258 67 254" stroke="#a0522d" stroke-width="1.2" fill="none"/>
+  <rect x="51" y="231" width="22" height="7" rx="2" fill="white" stroke="#bbb" stroke-width="1"/>
+  <rect x="59" y="227" width="6" height="5" rx="1" fill="white" stroke="#bbb" stroke-width="1"/>
+  <rect x="61" y="228" width="2" height="3" fill="#e74c3c"/>
+  <rect x="60" y="229" width="4" height="2" fill="#e74c3c"/>
+  <rect x="48" y="263" width="28" height="34" rx="5" fill="white" stroke="#bbb" stroke-width="1.2"/>
+  <rect x="59" y="270" width="3" height="7" fill="#e74c3c"/>
+  <rect x="56" y="273" width="8" height="3" fill="#e74c3c"/>
+  <line x1="76" y1="272" x2="96" y2="272" stroke="#bbb" stroke-width="2.5" stroke-linecap="round"/>
+  <circle cx="100" cy="272" r="5" fill="none" stroke="#555" stroke-width="1.5"/>
+  <line x1="48" y1="272" x2="36" y2="280" stroke="#bbb" stroke-width="2.5" stroke-linecap="round"/>
+  <text x="62" y="308" text-anchor="middle" font-family="Georgia,serif" font-size="9" fill="#555">Nurse 3</text>
+
+  <!-- arrow 3 -->
+  <line x1="106" y1="272" x2="160" y2="238" stroke="#7f8c8d" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#n3)"/>
+
+  <!-- Patient 3 (bed, bottom) -->
+  <rect x="163" y="222" width="70" height="12" rx="3" fill="#ecf0f1" stroke="#bdc3c7" stroke-width="1.2"/>
+  <rect x="163" y="234" width="70" height="26" rx="2" fill="#d6eaf8" stroke="#aed6f1" stroke-width="1"/>
+  <rect x="215" y="224" width="16" height="9" rx="3" fill="white" stroke="#bdc3c7" stroke-width="1"/>
+  <circle cx="223" cy="219" r="10" fill="#f5cba7" stroke="#c0903a" stroke-width="1.2"/>
+  <ellipse cx="219" cy="218" rx="1.5" ry="1.5" fill="#555"/>
+  <ellipse cx="227" cy="218" rx="1.5" ry="1.5" fill="#555"/>
+  <text x="198" y="274" text-anchor="middle" font-family="Georgia,serif" font-size="10" fill="#555">Patient 3</text>
+
+  <text x="210" y="306" text-anchor="middle" font-family="Georgia,serif" font-size="12" fill="#c0392b" font-weight="bold">a = a DIFFERENT nurse each time</text>
+</svg>`;
+const SVG_scope_narrow  = `<svg xmlns="http://www.w3.org/2000/svg" width="420" height="320" viewBox="0 0 420 320">
+  <rect width="420" height="320" fill="#fdf6e3"/>
+  <text x="210" y="26" text-anchor="middle" font-family="Georgia,serif" font-size="12" fill="#888">(one student listened to all 3 books)</text>
+
+  <!-- Reader (left) -->
+  <circle cx="63" cy="112" r="20" fill="#f5cba7" stroke="#c0903a" stroke-width="1.5"/>
+  <ellipse cx="57" cy="109" rx="2.5" ry="2.5" fill="#555"/>
+  <ellipse cx="69" cy="109" rx="2.5" ry="2.5" fill="#555"/>
+  <ellipse cx="63" cy="119" rx="4" ry="3" fill="#c0392b"/>
+  <rect x="44" y="132" width="38" height="50" rx="6" fill="#3498db" stroke="#2176ae" stroke-width="1.5"/>
+  <line x1="82" y1="147" x2="108" y2="152" stroke="#2176ae" stroke-width="3" stroke-linecap="round"/>
+  <line x1="44" y1="147" x2="28" y2="160" stroke="#2176ae" stroke-width="3" stroke-linecap="round"/>
+  <line x1="55" y1="182" x2="50" y2="218" stroke="#2176ae" stroke-width="3" stroke-linecap="round"/>
+  <line x1="71" y1="182" x2="76" y2="218" stroke="#2176ae" stroke-width="3" stroke-linecap="round"/>
+  <rect x="106" y="143" width="26" height="20" rx="2" fill="#e74c3c" stroke="#922b21" stroke-width="1.2"/>
+  <line x1="119" y1="143" x2="119" y2="163" stroke="#922b21" stroke-width="1"/>
+  <text x="63" y="242" text-anchor="middle" font-family="Georgia,serif" font-size="11" fill="#2176ae">Reader</text>
+
+  <!-- sound waves -->
+  <path d="M136 150 Q148 143 148 152 Q148 161 136 155" fill="none" stroke="#f39c12" stroke-width="1.5" opacity="0.8"/>
+  <path d="M140 146 Q156 138 156 152 Q156 166 140 158" fill="none" stroke="#f39c12" stroke-width="1.5" opacity="0.4"/>
+
+  <!-- 3 books stacked (middle) -->
+  <rect x="174" y="162" width="34" height="11" rx="2" fill="#e74c3c" stroke="#c0392b" stroke-width="1"/>
+  <rect x="174" y="151" width="34" height="11" rx="2" fill="#f39c12" stroke="#d68910" stroke-width="1"/>
+  <rect x="174" y="140" width="34" height="11" rx="2" fill="#2ecc71" stroke="#27ae60" stroke-width="1"/>
+  <text x="191" y="186" text-anchor="middle" font-family="Georgia,serif" font-size="10" fill="#888">3 books</text>
+
+  <!-- arrow -->
+  <defs><marker id="arr" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><polygon points="0 0,7 3.5,0 7" fill="#c0392b"/></marker></defs>
+  <line x1="210" y1="155" x2="258" y2="140" stroke="#c0392b" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arr)"/>
+
+  <!-- 1 Student (right, listening) -->
+  <circle cx="300" cy="112" r="20" fill="#f5cba7" stroke="#c0903a" stroke-width="1.5"/>
+  <ellipse cx="293" cy="110" rx="2.5" ry="2.5" fill="#555"/>
+  <ellipse cx="307" cy="110" rx="2.5" ry="2.5" fill="#555"/>
+  <path d="M293 120 Q300 126 307 120" stroke="#a0522d" stroke-width="1.5" fill="none"/>
+  <rect x="282" y="132" width="38" height="46" rx="6" fill="#27ae60" stroke="#1e8449" stroke-width="1.5"/>
+  <line x1="282" y1="148" x2="265" y2="160" stroke="#1e8449" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="320" y1="148" x2="337" y2="160" stroke="#1e8449" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="292" y1="178" x2="287" y2="212" stroke="#1e8449" stroke-width="3" stroke-linecap="round"/>
+  <line x1="308" y1="178" x2="313" y2="212" stroke="#1e8449" stroke-width="3" stroke-linecap="round"/>
+  <text x="300" y="242" text-anchor="middle" font-family="Georgia,serif" font-size="11" fill="#1e8449">1 Student</text>
+  <text x="300" y="256" text-anchor="middle" font-family="Georgia,serif" font-size="10" fill="#888">(heard all 3)</text>
+
+  <text x="210" y="292" text-anchor="middle" font-family="Georgia,serif" font-size="13" fill="#c0392b" font-weight="bold">a = a SINGLE student every time</text>
+</svg>`;
+const SVG_scope_wide    = `<svg xmlns="http://www.w3.org/2000/svg" width="420" height="320" viewBox="0 0 420 320">
+  <rect width="420" height="320" fill="#eaf4fb"/>
+  <text x="210" y="26" text-anchor="middle" font-family="Georgia,serif" font-size="12" fill="#888">(each book was read to a different student)</text>
+
+  <!-- Reader (left) -->
+  <circle cx="47" cy="112" r="18" fill="#f5cba7" stroke="#c0903a" stroke-width="1.5"/>
+  <ellipse cx="41" cy="110" rx="2" ry="2" fill="#555"/>
+  <ellipse cx="53" cy="110" rx="2" ry="2" fill="#555"/>
+  <ellipse cx="47" cy="119" rx="3.5" ry="2.5" fill="#c0392b"/>
+  <rect x="30" y="130" width="34" height="46" rx="6" fill="#3498db" stroke="#2176ae" stroke-width="1.5"/>
+  <line x1="64" y1="145" x2="86" y2="148" stroke="#2176ae" stroke-width="3" stroke-linecap="round"/>
+  <line x1="30" y1="145" x2="16" y2="156" stroke="#2176ae" stroke-width="3" stroke-linecap="round"/>
+  <line x1="40" y1="176" x2="35" y2="210" stroke="#2176ae" stroke-width="3" stroke-linecap="round"/>
+  <line x1="54" y1="176" x2="59" y2="210" stroke="#2176ae" stroke-width="3" stroke-linecap="round"/>
+  <rect x="86" y="140" width="22" height="16" rx="2" fill="#e74c3c" stroke="#922b21" stroke-width="1.2"/>
+  <line x1="97" y1="140" x2="97" y2="156" stroke="#922b21" stroke-width="1"/>
+  <text x="47" y="234" text-anchor="middle" font-family="Georgia,serif" font-size="11" fill="#2176ae">Reader</text>
+  <path d="M112 147 Q122 141 122 148 Q122 155 112 151" fill="none" stroke="#f39c12" stroke-width="1.5" opacity="0.7"/>
+
+  <defs>
+    <marker id="a1" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><polygon points="0 0,6 3,0 6" fill="#c0392b"/></marker>
+    <marker id="a2" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><polygon points="0 0,6 3,0 6" fill="#d68910"/></marker>
+    <marker id="a3" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><polygon points="0 0,6 3,0 6" fill="#27ae60"/></marker>
+  </defs>
+
+  <!-- Pair 1: red book → S1 -->
+  <rect x="138" y="82" width="20" height="14" rx="2" fill="#e74c3c" stroke="#922b21" stroke-width="1"/>
+  <line x1="148" y1="82" x2="148" y2="96" stroke="#922b21" stroke-width="1"/>
+  <line x1="160" y1="89" x2="180" y2="89" stroke="#c0392b" stroke-width="1.5" stroke-dasharray="3,2" marker-end="url(#a1)"/>
+  <circle cx="196" cy="79" r="13" fill="#f5cba7" stroke="#c0903a" stroke-width="1.2"/>
+  <ellipse cx="191" cy="77" rx="1.8" ry="1.8" fill="#555"/>
+  <ellipse cx="201" cy="77" rx="1.8" ry="1.8" fill="#555"/>
+  <path d="M191 84 Q196 88 201 84" stroke="#a0522d" stroke-width="1.2" fill="none"/>
+  <rect x="184" y="92" width="24" height="34" rx="5" fill="#e74c3c" stroke="#c0392b" stroke-width="1.2"/>
+  <text x="196" y="140" text-anchor="middle" font-family="Georgia,serif" font-size="10" fill="#c0392b">S1</text>
+
+  <!-- Pair 2: orange book → S2 -->
+  <rect x="138" y="152" width="20" height="14" rx="2" fill="#f39c12" stroke="#d68910" stroke-width="1"/>
+  <line x1="148" y1="152" x2="148" y2="166" stroke="#d68910" stroke-width="1"/>
+  <line x1="160" y1="159" x2="180" y2="159" stroke="#d68910" stroke-width="1.5" stroke-dasharray="3,2" marker-end="url(#a2)"/>
+  <circle cx="196" cy="150" r="13" fill="#f5cba7" stroke="#c0903a" stroke-width="1.2"/>
+  <ellipse cx="191" cy="148" rx="1.8" ry="1.8" fill="#555"/>
+  <ellipse cx="201" cy="148" rx="1.8" ry="1.8" fill="#555"/>
+  <path d="M191 155 Q196 159 201 155" stroke="#a0522d" stroke-width="1.2" fill="none"/>
+  <rect x="184" y="163" width="24" height="34" rx="5" fill="#f39c12" stroke="#d68910" stroke-width="1.2"/>
+  <text x="196" y="211" text-anchor="middle" font-family="Georgia,serif" font-size="10" fill="#d68910">S2</text>
+
+  <!-- Pair 3: green book → S3 -->
+  <rect x="138" y="222" width="20" height="14" rx="2" fill="#2ecc71" stroke="#27ae60" stroke-width="1"/>
+  <line x1="148" y1="222" x2="148" y2="236" stroke="#27ae60" stroke-width="1"/>
+  <line x1="160" y1="229" x2="180" y2="229" stroke="#27ae60" stroke-width="1.5" stroke-dasharray="3,2" marker-end="url(#a3)"/>
+  <circle cx="196" cy="220" r="13" fill="#f5cba7" stroke="#c0903a" stroke-width="1.2"/>
+  <ellipse cx="191" cy="218" rx="1.8" ry="1.8" fill="#555"/>
+  <ellipse cx="201" cy="218" rx="1.8" ry="1.8" fill="#555"/>
+  <path d="M191 225 Q196 229 201 225" stroke="#a0522d" stroke-width="1.2" fill="none"/>
+  <rect x="184" y="233" width="24" height="34" rx="5" fill="#2ecc71" stroke="#27ae60" stroke-width="1.2"/>
+  <text x="196" y="280" text-anchor="middle" font-family="Georgia,serif" font-size="10" fill="#27ae60">S3</text>
+
+  <text x="210" y="304" text-anchor="middle" font-family="Georgia,serif" font-size="13" fill="#2980b9" font-weight="bold">a = a DIFFERENT student each time</text>
+</svg>`;
+
+const SVG_auditor_surface = `<svg xmlns="http://www.w3.org/2000/svg" width="420" height="320" viewBox="0 0 420 320">
+  <rect width="420" height="320" fill="#f0f0f8"/>
+  <text x="210" y="24" text-anchor="middle" font-family="Georgia,serif" font-size="13" fill="#555" font-style="italic">"The auditor attributed every error to a technician."</text>
+  <text x="210" y="44" text-anchor="middle" font-family="Georgia,serif" font-size="11" fill="#888">(all errors attributed to the same technician)</text>
+
+  <!-- Auditor (left) -->
+  <circle cx="60" cy="108" r="20" fill="#f5cba7" stroke="#c0903a" stroke-width="1.5"/>
+  <ellipse cx="54" cy="106" rx="2.5" ry="2.5" fill="#555"/>
+  <ellipse cx="66" cy="106" rx="2.5" ry="2.5" fill="#555"/>
+  <path d="M54 115 Q60 120 66 115" stroke="#a0522d" stroke-width="1.5" fill="none"/>
+  <!-- suit -->
+  <rect x="42" y="128" width="38" height="50" rx="5" fill="#2c3e50" stroke="#1a252f" stroke-width="1.5"/>
+  <!-- tie -->
+  <polygon points="60,130 56,145 60,148 64,145" fill="#e74c3c"/>
+  <line x1="80" y1="143" x2="106" y2="148" stroke="#1a252f" stroke-width="3" stroke-linecap="round"/>
+  <line x1="42" y1="143" x2="26" y2="156" stroke="#1a252f" stroke-width="3" stroke-linecap="round"/>
+  <line x1="52" y1="178" x2="47" y2="214" stroke="#1a252f" stroke-width="3" stroke-linecap="round"/>
+  <line x1="68" y1="178" x2="73" y2="214" stroke="#1a252f" stroke-width="3" stroke-linecap="round"/>
+  <!-- clipboard -->
+  <rect x="104" y="138" width="22" height="28" rx="2" fill="#ecf0f1" stroke="#bdc3c7" stroke-width="1.2"/>
+  <rect x="111" y="134" width="8" height="6" rx="1" fill="#bdc3c7"/>
+  <line x1="108" y1="148" x2="122" y2="148" stroke="#bdc3c7" stroke-width="1"/>
+  <line x1="108" y1="153" x2="122" y2="153" stroke="#bdc3c7" stroke-width="1"/>
+  <line x1="108" y1="158" x2="122" y2="158" stroke="#bdc3c7" stroke-width="1"/>
+  <text x="60" y="238" text-anchor="middle" font-family="Georgia,serif" font-size="11" fill="#2c3e50">Auditor</text>
+
+  <!-- 3 error files (middle) -->
+  <rect x="160" y="118" width="32" height="40" rx="2" fill="#fadbd8" stroke="#e74c3c" stroke-width="1.2"/>
+  <text x="176" y="133" text-anchor="middle" font-family="Georgia,serif" font-size="8" fill="#c0392b">ERROR</text>
+  <text x="176" y="145" text-anchor="middle" font-family="Georgia,serif" font-size="8" fill="#c0392b">#1</text>
+  <rect x="166" y="108" width="32" height="40" rx="2" fill="#fadbd8" stroke="#e74c3c" stroke-width="1.2"/>
+  <text x="182" y="123" text-anchor="middle" font-family="Georgia,serif" font-size="8" fill="#c0392b">ERROR</text>
+  <text x="182" y="135" text-anchor="middle" font-family="Georgia,serif" font-size="8" fill="#c0392b">#2</text>
+  <rect x="172" y="98" width="32" height="40" rx="2" fill="#fadbd8" stroke="#e74c3c" stroke-width="1.2"/>
+  <text x="188" y="113" text-anchor="middle" font-family="Georgia,serif" font-size="8" fill="#c0392b">ERROR</text>
+  <text x="188" y="125" text-anchor="middle" font-family="Georgia,serif" font-size="8" fill="#c0392b">#3</text>
+  <text x="180" y="175" text-anchor="middle" font-family="Georgia,serif" font-size="10" fill="#888">3 errors</text>
+
+  <!-- arrow -->
+  <defs><marker id="arr" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><polygon points="0 0,7 3.5,0 7" fill="#c0392b"/></marker></defs>
+  <line x1="206" y1="138" x2="252" y2="130" stroke="#c0392b" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arr)"/>
+
+  <!-- Technician (right) -->
+  <circle cx="295" cy="108" r="20" fill="#f5cba7" stroke="#c0903a" stroke-width="1.5"/>
+  <ellipse cx="289" cy="106" rx="2.5" ry="2.5" fill="#555"/>
+  <ellipse cx="301" cy="106" rx="2.5" ry="2.5" fill="#555"/>
+  <path d="M289 115 Q295 120 301 115" stroke="#a0522d" stroke-width="1.5" fill="none"/>
+  <!-- overalls -->
+  <rect x="277" y="128" width="38" height="50" rx="5" fill="#2980b9" stroke="#1a6fa8" stroke-width="1.5"/>
+  <!-- wrench -->
+  <line x1="315" y1="143" x2="335" y2="155" stroke="#1a6fa8" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="337" cy="157" r="5" fill="none" stroke="#555" stroke-width="1.5"/>
+  <line x1="277" y1="143" x2="261" y2="155" stroke="#1a6fa8" stroke-width="3" stroke-linecap="round"/>
+  <line x1="287" y1="178" x2="282" y2="214" stroke="#1a6fa8" stroke-width="3" stroke-linecap="round"/>
+  <line x1="303" y1="178" x2="308" y2="214" stroke="#1a6fa8" stroke-width="3" stroke-linecap="round"/>
+  <text x="295" y="238" text-anchor="middle" font-family="Georgia,serif" font-size="11" fill="#1a6fa8">1 Technician</text>
+  <text x="295" y="252" text-anchor="middle" font-family="Georgia,serif" font-size="10" fill="#888">(blamed for all)</text>
+
+  <text x="210" y="288" text-anchor="middle" font-family="Georgia,serif" font-size="13" fill="#c0392b" font-weight="bold">a = a SINGLE technician every time</text>
+</svg>`;
+const SVG_auditor_inverse = `<svg xmlns="http://www.w3.org/2000/svg" width="420" height="320" viewBox="0 0 420 320">
+  <rect width="420" height="320" fill="#f8f0f0"/>
+  <text x="210" y="24" text-anchor="middle" font-family="Georgia,serif" font-size="13" fill="#555" font-style="italic">"The auditor attributed every error to a technician."</text>
+  <text x="210" y="44" text-anchor="middle" font-family="Georgia,serif" font-size="11" fill="#888">(each error attributed to a different technician)</text>
+
+  <!-- Auditor (left) -->
+  <circle cx="50" cy="155" r="18" fill="#f5cba7" stroke="#c0903a" stroke-width="1.5"/>
+  <ellipse cx="44" cy="153" rx="2" ry="2" fill="#555"/>
+  <ellipse cx="56" cy="153" rx="2" ry="2" fill="#555"/>
+  <path d="M44 161 Q50 166 56 161" stroke="#a0522d" stroke-width="1.2" fill="none"/>
+  <rect x="33" y="173" width="34" height="44" rx="5" fill="#2c3e50" stroke="#1a252f" stroke-width="1.2"/>
+  <polygon points="50,175 46,187 50,190 54,187" fill="#e74c3c"/>
+  <text x="50" y="232" text-anchor="middle" font-family="Georgia,serif" font-size="10" fill="#2c3e50">Auditor</text>
+
+  <defs>
+    <marker id="a1" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><polygon points="0 0,6 3,0 6" fill="#c0392b"/></marker>
+    <marker id="a2" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><polygon points="0 0,6 3,0 6" fill="#c0392b"/></marker>
+    <marker id="a3" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><polygon points="0 0,6 3,0 6" fill="#c0392b"/></marker>
+  </defs>
+
+  <!-- Error 1 + Technician 1 -->
+  <rect x="95" y="68" width="28" height="36" rx="2" fill="#fadbd8" stroke="#e74c3c" stroke-width="1.2"/>
+  <text x="109" y="82" text-anchor="middle" font-family="Georgia,serif" font-size="8" fill="#c0392b">ERROR</text>
+  <text x="109" y="94" text-anchor="middle" font-family="Georgia,serif" font-size="8" fill="#c0392b">#1</text>
+  <line x1="125" y1="86" x2="168" y2="86" stroke="#c0392b" stroke-width="1.5" stroke-dasharray="3,2" marker-end="url(#a1)"/>
+  <circle cx="184" cy="78" r="13" fill="#f5cba7" stroke="#c0903a" stroke-width="1.2"/>
+  <ellipse cx="179" cy="77" rx="1.8" ry="1.8" fill="#555"/>
+  <ellipse cx="189" cy="77" rx="1.8" ry="1.8" fill="#555"/>
+  <path d="M179 84 Q184 88 189 84" stroke="#a0522d" stroke-width="1.2" fill="none"/>
+  <rect x="172" y="91" width="24" height="32" rx="4" fill="#2980b9" stroke="#1a6fa8" stroke-width="1.2"/>
+  <text x="184" y="136" text-anchor="middle" font-family="Georgia,serif" font-size="9" fill="#1a6fa8">Tech 1</text>
+
+  <!-- Error 2 + Technician 2 -->
+  <rect x="95" y="138" width="28" height="36" rx="2" fill="#fadbd8" stroke="#e74c3c" stroke-width="1.2"/>
+  <text x="109" y="152" text-anchor="middle" font-family="Georgia,serif" font-size="8" fill="#c0392b">ERROR</text>
+  <text x="109" y="164" text-anchor="middle" font-family="Georgia,serif" font-size="8" fill="#c0392b">#2</text>
+  <line x1="125" y1="156" x2="168" y2="156" stroke="#c0392b" stroke-width="1.5" stroke-dasharray="3,2" marker-end="url(#a2)"/>
+  <circle cx="184" cy="148" r="13" fill="#f5cba7" stroke="#c0903a" stroke-width="1.2"/>
+  <ellipse cx="179" cy="147" rx="1.8" ry="1.8" fill="#555"/>
+  <ellipse cx="189" cy="147" rx="1.8" ry="1.8" fill="#555"/>
+  <path d="M179 154 Q184 158 189 154" stroke="#a0522d" stroke-width="1.2" fill="none"/>
+  <rect x="172" y="161" width="24" height="32" rx="4" fill="#2980b9" stroke="#1a6fa8" stroke-width="1.2"/>
+  <text x="184" y="206" text-anchor="middle" font-family="Georgia,serif" font-size="9" fill="#1a6fa8">Tech 2</text>
+
+  <!-- Error 3 + Technician 3 -->
+  <rect x="95" y="208" width="28" height="36" rx="2" fill="#fadbd8" stroke="#e74c3c" stroke-width="1.2"/>
+  <text x="109" y="222" text-anchor="middle" font-family="Georgia,serif" font-size="8" fill="#c0392b">ERROR</text>
+  <text x="109" y="234" text-anchor="middle" font-family="Georgia,serif" font-size="8" fill="#c0392b">#3</text>
+  <line x1="125" y1="226" x2="168" y2="226" stroke="#c0392b" stroke-width="1.5" stroke-dasharray="3,2" marker-end="url(#a3)"/>
+  <circle cx="184" cy="218" r="13" fill="#f5cba7" stroke="#c0903a" stroke-width="1.2"/>
+  <ellipse cx="179" cy="217" rx="1.8" ry="1.8" fill="#555"/>
+  <ellipse cx="189" cy="217" rx="1.8" ry="1.8" fill="#555"/>
+  <path d="M179 224 Q184 228 189 224" stroke="#a0522d" stroke-width="1.2" fill="none"/>
+  <rect x="172" y="231" width="24" height="32" rx="4" fill="#2980b9" stroke="#1a6fa8" stroke-width="1.2"/>
+  <text x="184" y="276" text-anchor="middle" font-family="Georgia,serif" font-size="9" fill="#1a6fa8">Tech 3</text>
+
+  <text x="210" y="304" text-anchor="middle" font-family="Georgia,serif" font-size="13" fill="#2980b9" font-weight="bold">a = a DIFFERENT technician each time</text>
+</svg>`;
+
+const SVG_teacher_surface = `<svg xmlns="http://www.w3.org/2000/svg" width="420" height="320" viewBox="0 0 420 320">
+  <rect width="420" height="320" fill="#f0f8f0"/>
+  <text x="210" y="24" text-anchor="middle" font-family="Georgia,serif" font-size="13" fill="#555" font-style="italic">"The teacher gave a student every book."</text>
+  <text x="210" y="44" text-anchor="middle" font-family="Georgia,serif" font-size="11" fill="#888">(one student received all the books)</text>
+
+  <!-- Teacher (left) -->
+  <circle cx="60" cy="108" r="20" fill="#f5cba7" stroke="#c0903a" stroke-width="1.5"/>
+  <ellipse cx="54" cy="106" rx="2.5" ry="2.5" fill="#555"/>
+  <ellipse cx="66" cy="106" rx="2.5" ry="2.5" fill="#555"/>
+  <path d="M54 115 Q60 120 66 115" stroke="#a0522d" stroke-width="1.5" fill="none"/>
+  <!-- glasses -->
+  <circle cx="54" cy="104" r="5" fill="none" stroke="#555" stroke-width="1"/>
+  <circle cx="66" cy="104" r="5" fill="none" stroke="#555" stroke-width="1"/>
+  <line x1="59" y1="104" x2="61" y2="104" stroke="#555" stroke-width="1"/>
+  <!-- body -->
+  <rect x="42" y="128" width="38" height="50" rx="5" fill="#8e44ad" stroke="#6c3483" stroke-width="1.5"/>
+  <line x1="80" y1="143" x2="106" y2="148" stroke="#6c3483" stroke-width="3" stroke-linecap="round"/>
+  <line x1="42" y1="143" x2="26" y2="156" stroke="#6c3483" stroke-width="3" stroke-linecap="round"/>
+  <line x1="52" y1="178" x2="47" y2="214" stroke="#6c3483" stroke-width="3" stroke-linecap="round"/>
+  <line x1="68" y1="178" x2="73" y2="214" stroke="#6c3483" stroke-width="3" stroke-linecap="round"/>
+  <text x="60" y="238" text-anchor="middle" font-family="Georgia,serif" font-size="11" fill="#6c3483">Teacher</text>
+
+  <!-- 3 books stacked -->
+  <rect x="104" y="150" width="28" height="10" rx="2" fill="#e74c3c" stroke="#c0392b" stroke-width="1"/>
+  <rect x="104" y="140" width="28" height="10" rx="2" fill="#f39c12" stroke="#d68910" stroke-width="1"/>
+  <rect x="104" y="130" width="28" height="10" rx="2" fill="#2ecc71" stroke="#27ae60" stroke-width="1"/>
+
+  <!-- arrow -->
+  <defs><marker id="arr" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><polygon points="0 0,7 3.5,0 7" fill="#8e44ad"/></marker></defs>
+  <line x1="134" y1="143" x2="250" y2="130" stroke="#8e44ad" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arr)"/>
+
+  <!-- Student (right) -->
+  <circle cx="295" cy="108" r="20" fill="#f5cba7" stroke="#c0903a" stroke-width="1.5"/>
+  <ellipse cx="289" cy="106" rx="2.5" ry="2.5" fill="#555"/>
+  <ellipse cx="301" cy="106" rx="2.5" ry="2.5" fill="#555"/>
+  <path d="M289 115 Q295 120 301 115" stroke="#a0522d" stroke-width="1.5" fill="none"/>
+  <rect x="277" y="128" width="38" height="50" rx="5" fill="#3498db" stroke="#2176ae" stroke-width="1.5"/>
+  <line x1="315" y1="143" x2="335" y2="155" stroke="#2176ae" stroke-width="3" stroke-linecap="round"/>
+  <line x1="277" y1="143" x2="261" y2="155" stroke="#2176ae" stroke-width="3" stroke-linecap="round"/>
+  <line x1="287" y1="178" x2="282" y2="214" stroke="#2176ae" stroke-width="3" stroke-linecap="round"/>
+  <line x1="303" y1="178" x2="308" y2="214" stroke="#2176ae" stroke-width="3" stroke-linecap="round"/>
+  <text x="295" y="238" text-anchor="middle" font-family="Georgia,serif" font-size="11" fill="#2176ae">1 Student</text>
+  <text x="295" y="252" text-anchor="middle" font-family="Georgia,serif" font-size="10" fill="#888">(received all)</text>
+
+  <text x="210" y="288" text-anchor="middle" font-family="Georgia,serif" font-size="13" fill="#8e44ad" font-weight="bold">a = a SINGLE student</text>
+</svg>`;
+const SVG_teacher_inverse = `<svg xmlns="http://www.w3.org/2000/svg" width="420" height="320" viewBox="0 0 420 320">
+  <rect width="420" height="320" fill="#f8f0ff"/>
+  <text x="210" y="24" text-anchor="middle" font-family="Georgia,serif" font-size="13" fill="#555" font-style="italic">"The teacher gave a student every book."</text>
+  <text x="210" y="44" text-anchor="middle" font-family="Georgia,serif" font-size="11" fill="#888">(each book given to a different student)</text>
+
+  <!-- Teacher (left) -->
+  <circle cx="50" cy="155" r="18" fill="#f5cba7" stroke="#c0903a" stroke-width="1.5"/>
+  <ellipse cx="44" cy="153" rx="2" ry="2" fill="#555"/>
+  <ellipse cx="56" cy="153" rx="2" ry="2" fill="#555"/>
+  <circle cx="44" cy="151" r="4" fill="none" stroke="#555" stroke-width="1"/>
+  <circle cx="56" cy="151" r="4" fill="none" stroke="#555" stroke-width="1"/>
+  <line x1="48" y1="151" x2="52" y2="151" stroke="#555" stroke-width="1"/>
+  <path d="M44 161 Q50 166 56 161" stroke="#a0522d" stroke-width="1.2" fill="none"/>
+  <rect x="33" y="173" width="34" height="44" rx="5" fill="#8e44ad" stroke="#6c3483" stroke-width="1.2"/>
+  <text x="50" y="232" text-anchor="middle" font-family="Georgia,serif" font-size="10" fill="#6c3483">Teacher</text>
+
+  <defs>
+    <marker id="a1" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><polygon points="0 0,6 3,0 6" fill="#8e44ad"/></marker>
+    <marker id="a2" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><polygon points="0 0,6 3,0 6" fill="#8e44ad"/></marker>
+    <marker id="a3" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><polygon points="0 0,6 3,0 6" fill="#8e44ad"/></marker>
+  </defs>
+
+  <!-- Book 1 → Student 1 -->
+  <rect x="98" y="68" width="22" height="14" rx="2" fill="#e74c3c" stroke="#c0392b" stroke-width="1"/>
+  <line x1="122" y1="75" x2="162" y2="80" stroke="#8e44ad" stroke-width="1.5" stroke-dasharray="3,2" marker-end="url(#a1)"/>
+  <circle cx="178" cy="73" r="13" fill="#f5cba7" stroke="#c0903a" stroke-width="1.2"/>
+  <ellipse cx="173" cy="72" rx="1.8" ry="1.8" fill="#555"/>
+  <ellipse cx="183" cy="72" rx="1.8" ry="1.8" fill="#555"/>
+  <path d="M173 79 Q178 83 183 79" stroke="#a0522d" stroke-width="1.2" fill="none"/>
+  <rect x="166" y="86" width="24" height="32" rx="4" fill="#3498db" stroke="#2176ae" stroke-width="1.2"/>
+  <text x="178" y="132" text-anchor="middle" font-family="Georgia,serif" font-size="9" fill="#2176ae">S1</text>
+
+  <!-- Book 2 → Student 2 -->
+  <rect x="98" y="148" width="22" height="14" rx="2" fill="#f39c12" stroke="#d68910" stroke-width="1"/>
+  <line x1="122" y1="155" x2="162" y2="148" stroke="#8e44ad" stroke-width="1.5" stroke-dasharray="3,2" marker-end="url(#a2)"/>
+  <circle cx="178" cy="143" r="13" fill="#f5cba7" stroke="#c0903a" stroke-width="1.2"/>
+  <ellipse cx="173" cy="142" rx="1.8" ry="1.8" fill="#555"/>
+  <ellipse cx="183" cy="142" rx="1.8" ry="1.8" fill="#555"/>
+  <path d="M173 149 Q178 153 183 149" stroke="#a0522d" stroke-width="1.2" fill="none"/>
+  <rect x="166" y="156" width="24" height="32" rx="4" fill="#3498db" stroke="#2176ae" stroke-width="1.2"/>
+  <text x="178" y="202" text-anchor="middle" font-family="Georgia,serif" font-size="9" fill="#2176ae">S2</text>
+
+  <!-- Book 3 → Student 3 -->
+  <rect x="98" y="228" width="22" height="14" rx="2" fill="#2ecc71" stroke="#27ae60" stroke-width="1"/>
+  <line x1="122" y1="235" x2="162" y2="220" stroke="#8e44ad" stroke-width="1.5" stroke-dasharray="3,2" marker-end="url(#a3)"/>
+  <circle cx="178" cy="213" r="13" fill="#f5cba7" stroke="#c0903a" stroke-width="1.2"/>
+  <ellipse cx="173" cy="212" rx="1.8" ry="1.8" fill="#555"/>
+  <ellipse cx="183" cy="212" rx="1.8" ry="1.8" fill="#555"/>
+  <path d="M173 219 Q178 223 183 219" stroke="#a0522d" stroke-width="1.2" fill="none"/>
+  <rect x="166" y="226" width="24" height="32" rx="4" fill="#3498db" stroke="#2176ae" stroke-width="1.2"/>
+  <text x="178" y="272" text-anchor="middle" font-family="Georgia,serif" font-size="9" fill="#2176ae">S3</text>
+
+  <text x="210" y="304" text-anchor="middle" font-family="Georgia,serif" font-size="13" fill="#8e44ad" font-weight="bold">a = a DIFFERENT student each time</text>
+</svg>`;
+
+const AUDIO_QA = "QA.mp3";
+const AUDIO_RD = "R.mp3";
+const AUDIO_NON_RD = "N.mp3";
+
+const TRIALS = [
+  {
+    id: "b1", type: "baseline",
+    sentence: "A nurse examined every patient.",
+    images: [
+      { svg: SVG_nurse_surface, caption: "A single nurse examined all the patients." },
+      { svg: SVG_nurse_inverse, caption: "Each patient was examined by a different nurse." },
+    ]
+  },
+  {
+    id: "b2", type: "baseline",
+    sentence: "He read every book to a student.",
+    images: [
+      { svg: SVG_scope_narrow, caption: "He read all the books to a single student." },
+      { svg: SVG_scope_wide,   caption: "He read each book to a different student." },
+    ]
+  },
+  {
+    id: "b3", type: "baseline",
+    sentence: "Someone examined every patient, a nurse. (You are updating the information about the examiner)",
+    images: [
+      { svg: SVG_nurse_surface, caption: "A single nurse examined all the patients." },
+      { svg: SVG_nurse_inverse, caption: "Each patient was examined by a different nurse." },
+    ]
+  },
+  {
+    id: "b4", type: "baseline",
+    sentence: "The auditor attributed every error to a technician.",
+    images: [
+      { svg: SVG_auditor_surface, caption: "A single technician was blamed for all the errors." },
+      { svg: SVG_auditor_inverse, caption: "Each error was attributed to a different technician." },
+    ]
+  },
+  {
+    id: "b5", type: "baseline",
+    correctAnswer: "b",
+    sentence: "The auditor attributed every error to a different technician.",
+    images: [
+      { svg: SVG_auditor_surface, caption: "A single technician was blamed for all the errors." },
+      { svg: SVG_auditor_inverse, caption: "Each error was attributed to a different technician." },
+    ]
+  },
+  {
+    id: "b6", type: "baseline",
+    correctAnswer: "a",
+    sentence: "The teacher gave a student every book.",
+    images: [
+      { svg: SVG_teacher_surface, caption: "A single student received all the books." },
+      { svg: SVG_teacher_inverse, caption: "Each book was given to a different student." },
+    ]
+  },
+  { id: "r1", type: "baseline-rating", pairId: "book",     complete: true,  sentence: "He read every book to a student." },
+  { id: "r2", type: "baseline-rating", pairId: "book",     complete: false, sentence: "He read every book." },
+  { id: "r3", type: "baseline-rating", pairId: "auditor",  complete: true,  sentence: "The auditor attributed every error to a technician." },
+  { id: "r4", type: "baseline-rating", pairId: "auditor",  complete: false, sentence: "The auditor attributed every error." },
+  {
+    id: "m1-scope", type: "main-conditional-scope",
+    label: "Afterthought-scope",
+    images: [
+      { svg: SVG_scope_narrow, caption: "He read all the books to a single student." },
+      { svg: SVG_scope_wide,   caption: "He read each book to a different student." },
+    ]
+  },
+  {
+    id: "m2-scope", type: "main-conditional-scope",
+    label: "Non-afterthought-scope",
+    images: [
+      { svg: SVG_scope_narrow, caption: "He read all the books to a single student." },
+      { svg: SVG_scope_wide,   caption: "He read each book to a different student." },
+    ]
+  },
+  {
+    id: "m3", type: "main-rating",
+    label: "QA-context",
+    sentence: "Q: Who did he read every book to?\nA: He did to a student.",
+    conditionalScope: {
+      threshold: 4,
+      images: [
+        { svg: SVG_scope_narrow, caption: "He read all the books to a single student." },
+        { svg: SVG_scope_wide,   caption: "He read each book to a different student." },
+      ]
+    }
+  },
+  {
+    id: "m3-scope", type: "main-conditional-scope",
+    label: "QA-context-scope",
+    images: [
+      { svg: SVG_scope_narrow, caption: "He read all the books to a single student." },
+      { svg: SVG_scope_wide,   caption: "He read each book to a different student." },
+    ]
+  },
+  {
+    id: "m7", type: "main-rating-audio",
+    audio: AUDIO_QA,
+    label: "QA-audio",
+    sentence: "Q: Who did Mary read every book to?\nA: Read every book she did to a student.",
+  },
+  {
+    id: "m7-scope", type: "main-conditional-scope",
+    label: "QA-audio-scope",
+    images: [
+      { svg: SVG_scope_narrow, caption: "She read all the books to a single student." },
+      { svg: SVG_scope_wide,   caption: "She read each book to a different student." },
+    ]
+  },
+  {
+    id: "m4", type: "main-rating",
+    label: "Auditor-afterthought",
+    sentence: "The auditor attributed every error to someone, and attributed every error he did, to a technician.",
+  },
+  {
+    id: "m5", type: "main-rating",
+    label: "Auditor-non-afterthought",
+    sentence: "The auditor attributed every error to someone, and attributed every error he did to a technician.",
+  },
+  {
+    id: "m6", type: "main-conditional",
+    label: "Auditor-non-afterthought-scope",
+    condition: { higherThan: "m4", by: 1 },
+    sentence: "The auditor attributed every error to someone, and attributed every error he did to a technician.",
+    images: [
+      { svg: SVG_auditor_surface, caption: "A single technician was blamed for all the errors." },
+      { svg: SVG_auditor_inverse, caption: "Each error was attributed to a different technician." },
+    ]
+  },
+  {
+    id: "m0", type: "baseline",
+    correctAnswer: "both",
+    sentence: "He wanted to read every book to someone, and read every book to someone he did, to a student.",
+    images: [
+      { svg: SVG_scope_narrow, caption: "He read all the books to a single student." },
+      { svg: SVG_scope_wide,   caption: "He read each book to a different student." },
+    ]
+  },
+  {
+    id: "m1", type: "main-rating-audio",
+    audio: AUDIO_RD,
+    label: "Afterthought",
+    showSentenceInRating: true,
+    sentence: "He wanted to read every book to someone, and read every book he did, to a STUDENT.",
+    images: [
+      { svg: SVG_scope_narrow, caption: "He read all the books to a single student." },
+      { svg: SVG_scope_wide,   caption: "He read each book to a different student." },
+    ]
+  },
+  {
+    id: "m2", type: "main-rating-audio",
+    audio: AUDIO_NON_RD,
+    label: "Non-afterthought",
+    showSentenceInRating: true,
+    sentence: "He wanted to read books to the students, and read every book he did to a student.",
+    images: [
+      { svg: SVG_scope_narrow, caption: "He read all the books to a single student." },
+      { svg: SVG_scope_wide,   caption: "He read each book to a different student." },
+    ]
+  },
+];
+
+let currentIndex = 0;
+let selectedMeaning = null;
+let selectedImage = null;
+let selectedScale = null;
+let audioPlayed = false;
+let audioObj = null;
+let responses = [];
+let backUsed = 0;  // total back uses allowed: 1
+
+// Get Prolific ID from URL
+function getURLParam(name) {
+  const url = new URLSearchParams(window.location.search);
+  return url.get(name) || "";
+}
+const PROLIFIC_PID = getURLParam("PROLIFIC_PID");
+
+function showScreen(id) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+}
+function animateCard() {
+  const c = document.getElementById("trial-card");
+  c.style.animation = "none"; void c.offsetWidth; c.style.animation = "fadeUp .4s ease both";
+}
+function updateNextBtn() {
+  if (!shuffledTrials || shuffledTrials.length === 0) return;
+  const trial = shuffledTrials[currentIndex];
+  if (!trial) return;
+  let ready;
+  if (trial.type === "baseline-rating" || trial.type === "main-rating") ready = selectedScale !== null;
+  else if (trial.type === "main-rating-audio") ready = audioPlayed && selectedScale !== null;
+  else if (trial.type === "baseline") ready = selectedMeaning !== null;
+  else if (trial.type === "main") {
+    if (selectedImage === "other") {
+      const txt = document.getElementById("main-other-input").value.trim();
+      ready = audioPlayed && txt.length > 0;
+    } else ready = audioPlayed && selectedImage !== null;
+  } else if (trial.type === "main-conditional-scope") {
+    ready = selectedImage !== null;
+  } else {
+    if (selectedImage === "other") {
+      const txt = document.getElementById("text-other-input").value.trim();
+      ready = txt.length > 0;
+    } else ready = selectedImage !== null;
+  }
+  document.getElementById("next-btn").disabled = !ready;
+  document.getElementById("next-btn").textContent =
+    currentIndex === shuffledTrials.length - 1 ? "Finish →" : "Confirm →";
+}
+
+function shuffleArray(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+let shuffledTrials = [];
+
+function startExperiment() {
+  currentIndex = 0; responses = []; backUsed = 0;
+  const firstFour  = shuffleArray(TRIALS.filter(t => ["b1","b2","b3","b5"].includes(t.id)));
+  const otherBase  = shuffleArray(TRIALS.filter(t => !["b1","b2","b3","b5"].includes(t.id) && (t.type === "baseline" || t.type === "baseline-rating")));
+  const mainTrials = shuffleArray(TRIALS.filter(t => t.type !== "baseline" && t.type !== "baseline-rating" && t.type !== "main-conditional" && t.type !== "main-conditional-scope" && !["m1-scope","m2-scope","m3-scope","m7-scope"].includes(t.id)));
+  shuffledTrials = [...firstFour, ...otherBase, ...mainTrials];
+  showScreen("screen-experiment");
+  loadTrial();
+}
+
+function loadTrial() {
+  const trial = shuffledTrials[currentIndex];
+  selectedMeaning = null; selectedImage = null; selectedScale = null;
+  audioPlayed = false;
+  if (audioObj) { audioObj.pause(); audioObj = null; }
+
+  const pct = Math.round((currentIndex / shuffledTrials.length) * 100);
+  document.getElementById("progress-text").textContent = "Trial " + (currentIndex+1) + " of " + shuffledTrials.length;
+  document.getElementById("progress-pct").textContent  = pct + "%";
+  document.getElementById("progress-fill").style.width = pct + "%";
+
+  const badge = document.getElementById("trial-badge");
+  const bTotal = shuffledTrials.filter(t => t.type === "baseline").length;
+  const mTotal = shuffledTrials.filter(t => t.type !== "baseline").length;
+  badge.textContent = "Trial " + (currentIndex + 1) + " of " + shuffledTrials.length;
+  badge.className = "badge main";
+
+  document.getElementById("baseline-layout").style.display             = trial.type === "baseline"               ? "" : "none";
+  document.getElementById("baseline-rating-layout").style.display      = trial.type === "baseline-rating"        ? "" : "none";
+  document.getElementById("main-rating-layout").style.display          = trial.type === "main-rating"            ? "" : "none";
+  document.getElementById("main-rating-audio-layout").style.display    = trial.type === "main-rating-audio"      ? "" : "none";
+  document.getElementById("main-layout").style.display                 = (trial.type === "main" || trial.type === "main-conditional" || trial.type === "main-conditional-scope") ? "" : "none";
+  document.getElementById("main-text-layout").style.display            = trial.type === "main-text"               ? "" : "none";
+
+  if (trial.type === "main-rating") {
+    document.getElementById("main-rating-sentence").textContent = trial.sentence;
+    document.querySelectorAll("#main-scale-buttons .scale-btn").forEach(b => b.classList.remove("selected"));
+
+  } else if (trial.type === "baseline-rating") {
+    document.getElementById("rating-sentence").textContent = trial.sentence;
+    document.querySelectorAll("#scale-buttons .scale-btn").forEach(b => b.classList.remove("selected"));
+
+  } else if (trial.type === "baseline") {
+    document.getElementById("baseline-sentence").textContent = trial.sentence;
+    ["btn-a","btn-b","btn-both"].forEach(id =>
+      document.getElementById(id).className = "meaning-btn"
+    );
+    const grid = document.getElementById("baseline-img-grid");
+    grid.innerHTML = trial.images.map((img, i) =>
+      `<div class="img-choice">${img.svg}
+        <div class="img-caption"><strong>Picture ${i===0?'A':'B'}</strong><br>${img.caption}</div>
+      </div>`
+    ).join("");
+
+  } else if (trial.type === "main-rating-audio") {
+    const pb2 = document.getElementById("play-btn-audio");
+    pb2.innerHTML = "&#9654;"; pb2.className = "play-btn";
+    document.getElementById("audio-wave-2").classList.remove("active");
+    document.getElementById("audio-hint-2").textContent = "Click to play sentence";
+    document.querySelectorAll("#audio-scale-buttons .scale-btn").forEach(b => b.classList.remove("selected"));
+    // Show the written sentence only when the trial opts in (e.g. m1 RD, m2 N); otherwise keep pure-audio.
+    if (trial.showSentenceInRating && trial.sentence) {
+      document.getElementById("main-audio-sentence-text").textContent = trial.sentence;
+      document.getElementById("main-audio-sentence-display").style.display = "";
+    } else {
+      document.getElementById("main-audio-sentence-display").style.display = "none";
+    }
+
+  } else if (trial.type === "main" || trial.type === "main-conditional" || trial.type === "main-conditional-scope") {
+    const pb = document.getElementById("play-btn");
+    const sentenceDisplay = document.getElementById("main-sentence-display");
+    const sentenceText = document.getElementById("main-sentence-text");
+
+    if (trial.type === "main-conditional-scope") {
+      // Inherit audio + sentence from the parent trial (m1/m2/m3/m7).
+      const parentId = trial.id.replace("-scope", "");
+      const parentTrial = TRIALS.find(t => t.id === parentId);
+      const parentIsAudio = parentTrial && parentTrial.type === "main-rating-audio";
+      const parentSentence = parentTrial ? parentTrial.sentence : null;
+
+      if (parentIsAudio) {
+        // Show the audio player so the participant can re-listen.
+        pb.style.display = "";
+        document.getElementById("audio-wave").style.display = "";
+        document.getElementById("audio-hint").style.display = "";
+        pb.innerHTML = "&#9654;"; pb.className = "play-btn";
+        document.getElementById("audio-wave").classList.remove("active");
+        document.getElementById("audio-hint").textContent = "Click to replay sentence";
+      } else {
+        pb.style.display = "none";
+        document.getElementById("audio-wave").style.display = "none";
+        document.getElementById("audio-hint").style.display = "none";
+      }
+      // Do NOT gate the Confirm button on playback — they heard it during rating.
+      audioPlayed = true;
+
+      // Show the parent sentence as text.
+      if (parentSentence) {
+        sentenceText.textContent = parentSentence;
+        sentenceDisplay.style.display = "";
+      } else {
+        sentenceDisplay.style.display = "none";
+      }
+
+      // Show the compare hint only when m1-scope and m2-scope are adjacent in shuffledTrials.
+      const compareHint = document.getElementById("main-compare-hint");
+      const isPairScope = id => id === "m1-scope" || id === "m2-scope";
+      const _m1Idx = shuffledTrials.findIndex(t => t.id === "m1-scope");
+      const _m2Idx = shuffledTrials.findIndex(t => t.id === "m2-scope");
+      const inPair = isPairScope(trial.id) && _m1Idx >= 0 && _m2Idx >= 0 && Math.abs(_m1Idx - _m2Idx) === 1;
+      if (compareHint) compareHint.style.display = inPair ? "" : "none";
+    } else {
+      // Hide compare hint on non-scope trials
+      const compareHint = document.getElementById("main-compare-hint");
+      if (compareHint) compareHint.style.display = "none";
+      pb.style.display = "";
+      document.getElementById("audio-wave").style.display = "";
+      document.getElementById("audio-hint").style.display = "";
+      pb.innerHTML = "&#9654;"; pb.className = "play-btn";
+      document.getElementById("audio-wave").classList.remove("active");
+      document.getElementById("audio-hint").textContent = "Click to play sentence";
+
+      // For regular main / main-conditional trials, show own sentence if present
+      if (trial.sentence) {
+        sentenceText.textContent = trial.sentence;
+        sentenceDisplay.style.display = "";
+      } else {
+        sentenceDisplay.style.display = "none";
+      }
+    }
+    ["a","b","both","asure","bsure","other"].forEach(v => {
+      const btn = document.getElementById("main-btn-" + v);
+      if (btn) btn.className = "meaning-btn";
+    });
+    document.getElementById("main-other-wrap").style.display = "none";
+    document.getElementById("main-other-input").value = "";
+    const grid = document.getElementById("main-img-grid");
+    grid.innerHTML = "";
+    trial.images.forEach((img, i) => {
+      const div = document.createElement("div");
+      div.className = "img-choice";
+      div.innerHTML = img.svg + `<div class="img-caption"><strong>Picture ${i===0?'A':'B'}</strong><br>${img.caption}</div>`;
+      grid.appendChild(div);
+    });
+
+  } else if (trial.type === "main-rating") {
+    document.getElementById("main-rating-sentence").textContent = trial.sentence || "";
+    document.querySelectorAll("#main-scale-buttons .scale-btn").forEach(b => b.classList.remove("selected"));
+
+  } else {
+    document.getElementById("text-prompt").textContent   = trial.prompt || "";
+    document.getElementById("text-sentence").textContent = trial.sentence || "";
+    ["a","b","both","asure","bsure","other"].forEach(v => {
+      const btn = document.getElementById("text-btn-" + v);
+      if (btn) btn.className = "meaning-btn";
+    });
+    document.getElementById("text-other-wrap").style.display = "none";
+    document.getElementById("text-other-input").value = "";
+    const grid = document.getElementById("main-text-img-grid");
+    grid.innerHTML = "";
+    trial.images.forEach((img, i) => {
+      const div = document.createElement("div");
+      div.className = "img-choice";
+      div.innerHTML = img.svg + `<div class="img-caption"><strong>Picture ${i===0?'A':'B'}</strong><br>${img.caption}</div>`;
+      grid.appendChild(div);
+    });
+  }
+
+  document.getElementById("next-btn").disabled = true;
+  const backBtn = document.getElementById("back-btn");
+
+  // In a scope pair (m1-scope/m2-scope adjacent), back is always free.
+  const _isPairScope = id => id === "m1-scope" || id === "m2-scope";
+  const _m1I = shuffledTrials.findIndex(t => t.id === "m1-scope");
+  const _m2I = shuffledTrials.findIndex(t => t.id === "m2-scope");
+  const _pairExists = _m1I >= 0 && _m2I >= 0 && Math.abs(_m1I - _m2I) === 1;
+  const backIsFree = _isPairScope(trial.id) && _pairExists && currentIndex === Math.max(_m1I, _m2I);
+
+  if (currentIndex === 0) {
+    backBtn.style.display = "none";
+  } else {
+    backBtn.style.display = "";
+    const blocked = !backIsFree && backUsed >= 1;
+    backBtn.disabled = blocked;
+    backBtn.style.opacity = blocked ? "0.3" : "1";
+    backBtn.title = blocked ? "You have already used your one back." : "";
+  }
+
+  // Restore a prior answer if the user navigated back to this trial.
+  const prevResp = responses.find(r => r.id === trial.id);
+  if (prevResp && trial.type === "main-conditional-scope" && prevResp.selected) {
+    selectMainChoice(prevResp.selected);
+    if (prevResp.selected === "other" && prevResp.otherText) {
+      document.getElementById("main-other-input").value = prevResp.otherText;
+      updateNextBtn();
+    }
+  }
+
+  animateCard();
+}
+
+function selectScale(val) {
+  selectedScale = val;
+  document.querySelectorAll("#scale-buttons .scale-btn").forEach((b, i) => {
+    b.classList.toggle("selected", i + 1 === val);
+  });
+  updateNextBtn();
+}
+
+function selectAudioScale(val) {
+  selectedScale = val;
+  document.querySelectorAll("#audio-scale-buttons .scale-btn").forEach((b, i) => {
+    b.classList.toggle("selected", i + 1 === val);
+  });
+  updateNextBtn();
+}
+
+function selectMainScale(val) {
+  selectedScale = val;
+  document.querySelectorAll("#main-scale-buttons .scale-btn").forEach((b, i) => {
+    b.classList.toggle("selected", i + 1 === val);
+  });
+  updateNextBtn();
+}
+
+function selectMeaning(val) {
+  selectedMeaning = val;
+  const map = { a: "sel-a", b: "sel-b", both: "sel-both" };
+  ["btn-a","btn-b","btn-both"].forEach(id =>
+    document.getElementById(id).className = "meaning-btn"
+  );
+  const btnId = { a:"btn-a", b:"btn-b", both:"btn-both" }[val];
+  document.getElementById(btnId).className = "meaning-btn " + map[val];
+  updateNextBtn();
+}
+
+function selectImage(i, gridId) {
+  selectedImage = i;
+  document.querySelectorAll("#" + gridId + " .img-choice").forEach((el, idx) => {
+    el.classList.toggle("selected", idx === i);
+  });
+  updateNextBtn();
+}
+
+function selectMainChoice(val) {
+  selectedImage = val;
+  const trial = shuffledTrials[currentIndex];
+  const prefix = (trial.type === "main" || trial.type === "main-conditional" || trial.type === "main-conditional-scope") ? "main" : "text";
+  ["a","b","both","other"].forEach(v => {
+    const btn = document.getElementById(prefix + "-btn-" + v);
+    if (btn) btn.className = "meaning-btn";
+  });
+  const map = { a:"sel-a", b:"sel-b", both:"sel-both", other:"sel-other" };
+  const btn = document.getElementById(prefix + "-btn-" + val);
+  if (btn) btn.className = "meaning-btn " + map[val];
+  // show/hide other textarea
+  const wrap  = document.getElementById(prefix + "-other-wrap");
+  const input = document.getElementById(prefix + "-other-input");
+  if (wrap) wrap.style.display = val === "other" ? "" : "none";
+  if (input && val !== "other") input.value = "";
+  updateNextBtn();
+}
+
+function playAudio() {
+  const trial = shuffledTrials[currentIndex];
+  const isRatingAudio = trial.type === "main-rating-audio";
+  const pb    = document.getElementById(isRatingAudio ? "play-btn-audio" : "play-btn");
+  const wave  = document.getElementById(isRatingAudio ? "audio-wave-2" : "audio-wave");
+  const hint  = document.getElementById(isRatingAudio ? "audio-hint-2" : "audio-hint");
+  if (audioObj) { audioObj.pause(); audioObj = null; }
+
+  // For scope trials, use the parent trial's audio.
+  let audioSrc = trial.audio;
+  if (trial.type === "main-conditional-scope") {
+    const parentId = trial.id.replace("-scope", "");
+    const parentTrial = TRIALS.find(t => t.id === parentId);
+    if (parentTrial && parentTrial.audio) audioSrc = parentTrial.audio;
+  }
+  if (!audioSrc) { hint.textContent = "No audio available"; return; }
+
+  const onEnd = () => {
+    pb.className = "play-btn played"; pb.innerHTML = "&#8634;";
+    wave.classList.remove("active");
+    hint.textContent = "Played — you may replay once";
+    audioPlayed = true; updateNextBtn();
+  };
+
+  audioObj = new Audio(audioSrc);
+  pb.className = "play-btn playing"; pb.innerHTML = "&#9646;&#9646;";
+  wave.classList.add("active"); hint.textContent = "Playing…";
+  audioObj.play().catch(e => { hint.textContent = "Error: " + e.message; });
+  audioObj.onended = onEnd;
+}
+
+function goBack() {
+  if (currentIndex === 0) return;
+
+  // Free navigation between m1-scope and m2-scope when they appear as a pair.
+  const curr = shuffledTrials[currentIndex];
+  const prev = shuffledTrials[currentIndex - 1];
+  const isPairScope = id => id === "m1-scope" || id === "m2-scope";
+  const inScopePair = curr && prev && isPairScope(curr.id) && isPairScope(prev.id);
+
+  if (!inScopePair && backUsed >= 1) {
+    alert("You may only go back once during the study.");
+    return;
+  }
+  if (!inScopePair) backUsed++;
+
+  currentIndex--;
+
+  // When leaving the pair context, drop later responses so they can be re-entered.
+  // Inside the pair: keep responses so the previous selection can be restored.
+  if (!inScopePair) {
+    responses = responses.filter(r => {
+      const idx = shuffledTrials.findIndex(t => t.id === r.id);
+      return idx < currentIndex;
+    });
+  }
+  loadTrial();
+}
+
+function submitTrial() {
+  const trial = shuffledTrials[currentIndex];
+  if (trial.type === "baseline-rating") {
+    responses.push({ id: trial.id, type: "baseline-rating", pairId: trial.pairId, complete: trial.complete, sentence: trial.sentence, score: selectedScale, timestamp: new Date().toISOString() });
+    // Check pairs after all rating trials are done
+    const ratingDone = responses.filter(r => r.type === "baseline-rating");
+    if (ratingDone.length === 4) {
+      // Check both pairs
+      const bookComplete   = ratingDone.find(r => r.pairId === "book"    && r.complete === true);
+      const bookIncomplete = ratingDone.find(r => r.pairId === "book"    && r.complete === false);
+      const audComplete    = ratingDone.find(r => r.pairId === "auditor" && r.complete === true);
+      const audIncomplete  = ratingDone.find(r => r.pairId === "auditor" && r.complete === false);
+      if (bookComplete && bookIncomplete && audComplete && audIncomplete) {
+        // Pair 1: "attributed every error" must be <= "attributed every error to a technician" * 70%
+        const pair1Ok = audIncomplete.score <= audComplete.score * 0.7;
+        // Pair 2: "attributed every error" must be <= "read every book" * 70%
+        const pair2Ok = audIncomplete.score <= bookIncomplete.score * 0.7;
+        if (!pair1Ok || !pair2Ok) { showFail({sentence: "rating check"}); return; }
+      }
+    }
+  } else if (trial.type === "baseline") {
+    const correctAns = trial.correctAnswer || "both";
+    const passed = selectedMeaning === correctAns;
+    responses.push({ id: trial.id, type: "baseline", sentence: trial.sentence, response: selectedMeaning, passed, timestamp: new Date().toISOString() });
+    if (!passed) { showFail(trial); return; }
+  } else if (trial.type === "main-rating" || trial.type === "main-rating-audio") {
+    // Upsert rating response (so going back + re-submitting doesn't duplicate).
+    const ratingResp = {
+      id: trial.id, type: trial.type, label: trial.label,
+      sentence: trial.sentence || null, score: selectedScale,
+      timestamp: new Date().toISOString()
+    };
+    const ratingIdx = responses.findIndex(r => r.id === trial.id);
+    if (ratingIdx >= 0) responses[ratingIdx] = ratingResp; else responses.push(ratingResp);
+
+    // --- Scope insertion logic ---
+    // m7: independent. Insert m7-scope right after m7 if score >= 4.
+    if (trial.id === "m7" && selectedScale >= 4) {
+      const scopeTrial = TRIALS.find(t => t.id === "m7-scope");
+      if (scopeTrial && !shuffledTrials.find(t => t.id === "m7-scope")) {
+        shuffledTrials.splice(currentIndex + 1, 0, scopeTrial);
+      }
+    }
+    // m1 & m2: paired. Wait until BOTH have been rated, then:
+    //   - both >= 4  → insert [m1-scope, m2-scope] back-to-back right after the later one
+    //   - only one >= 4 → insert only that one
+    //   - neither → insert nothing
+    if (trial.id === "m1" || trial.id === "m2") {
+      const otherId  = trial.id === "m1" ? "m2" : "m1";
+      const selfResp  = responses.find(r => r.id === trial.id);
+      const otherResp = responses.find(r => r.id === otherId);
+      if (selfResp && otherResp) {
+        // Both rated — decide.
+        const m1Scope = TRIALS.find(t => t.id === "m1-scope");
+        const m2Scope = TRIALS.find(t => t.id === "m2-scope");
+        const selfPassed  = selfResp.score  >= 4;
+        const otherPassed = otherResp.score >= 4;
+        const hasM1Scope = shuffledTrials.some(t => t.id === "m1-scope");
+        const hasM2Scope = shuffledTrials.some(t => t.id === "m2-scope");
+
+        if (selfPassed && otherPassed && !hasM1Scope && !hasM2Scope) {
+          // Insert the pair in fixed m1→m2 order for a consistent comparison frame.
+          shuffledTrials.splice(currentIndex + 1, 0, m1Scope, m2Scope);
+        } else if (selfPassed && !otherPassed) {
+          const selfScope = trial.id === "m1" ? m1Scope : m2Scope;
+          if (!shuffledTrials.some(t => t.id === selfScope.id)) {
+            shuffledTrials.splice(currentIndex + 1, 0, selfScope);
+          }
+        } else if (!selfPassed && otherPassed) {
+          // Other was rated earlier and its scope was held back — insert it now.
+          const otherScope = otherId === "m1" ? m1Scope : m2Scope;
+          if (!shuffledTrials.some(t => t.id === otherScope.id)) {
+            shuffledTrials.splice(currentIndex + 1, 0, otherScope);
+          }
+        }
+        // else both < 4 → do nothing
+      }
+      // else other not yet rated → wait (do not insert anything for trial yet)
+    }
+    // Check if conditional trial should be inserted
+    if (trial.id === "m5") {
+      const m4resp = responses.find(r => r.id === "m4");
+      const m5resp = responses.find(r => r.id === "m5");
+      if (m4resp && m5resp && m5resp.score >= m4resp.score + 1) {
+        const m6 = TRIALS.find(t => t.id === "m6");
+        if (m6 && !shuffledTrials.find(t => t.id === "m6")) {
+          shuffledTrials.splice(currentIndex + 1, 0, m6);
+        }
+      }
+    }
+    // Check if m3-scope should appear
+    if (trial.id === "m3") {
+      if (selectedScale >= 4) {
+        const m3scope = TRIALS.find(t => t.id === "m3-scope");
+        if (m3scope && !shuffledTrials.find(t => t.id === "m3-scope")) {
+          shuffledTrials.splice(currentIndex + 1, 0, m3scope);
+        }
+      }
+    }
+  } else {
+    const prefix = (trial.type === "main" || trial.type === "main-conditional" || trial.type === "main-conditional-scope") ? "main" : "text";
+    const otherText = selectedImage === "other"
+      ? document.getElementById(prefix + "-other-input").value.trim() : "";
+    const captionMap = {
+      a: trial.images[0].caption,
+      b: trial.images[1].caption,
+      both: "Both A and B",
+      asure: "Definitely A, not sure about B",
+      bsure: "Definitely B, not sure about A",
+      other: "Other: " + otherText
+    };
+    const caption = captionMap[selectedImage] || selectedImage;
+    const resp = {
+      id: trial.id, type: trial.type, label: trial.label,
+      selected: selectedImage, otherText, caption,
+      timestamp: new Date().toISOString()
+    };
+    const idx = responses.findIndex(r => r.id === trial.id);
+    if (idx >= 0) responses[idx] = resp; else responses.push(resp);
+  }
+  currentIndex++;
+  if (currentIndex >= shuffledTrials.length) showResults();
+  else loadTrial();
+}
+
+function showFail(trial) {
+  showScreen("screen-fail");
+}
+
+function showResults() {
+  const mainR = responses.filter(r => r.type !== "baseline" && r.type !== "baseline-rating");
+  document.getElementById("results-grid").innerHTML = mainR.map(r => {
+    const response = r.score !== undefined ? r.score + "/7" : (r.caption || r.selected);
+    return `<div class="result-row">
+      <span class="sentence">${r.label || r.id}</span>
+      <span class="response">${response}</span>
+    </div>`;
+  }).join("");
+  showScreen("screen-results");
+  // Auto-submit to Formspree (all responses)
+  submitToFormspree(mainR);
+}
+
+function submitToFormspree(mainR) {
+  const baselineR = responses.filter(r => r.type === "baseline");
+  const ratingR   = responses.filter(r => r.type === "baseline-rating");
+  const allMainR  = responses.filter(r => r.type !== "baseline" && r.type !== "baseline-rating");
+  const data = {
+    timestamp: new Date().toISOString(),
+    prolific_pid: PROLIFIC_PID,
+    baseline_responses: JSON.stringify(baselineR.map(r => ({
+      trial_id: r.id,
+      sentence: r.sentence,
+      response: r.response,
+      passed: r.passed,
+      timestamp: r.timestamp
+    }))),
+    rating_responses: JSON.stringify(ratingR.map(r => ({
+      trial_id: r.id,
+      sentence: r.sentence,
+      score: r.score,
+      timestamp: r.timestamp
+    }))),
+    responses: JSON.stringify(allMainR.map(r => ({
+      trial_id: r.id,
+      condition: r.label,
+      selected: r.selected || null,
+      score: r.score || null,
+      caption: r.caption || null,
+      sentence: r.sentence || null,
+      other_text: r.otherText || "",
+      timestamp: r.timestamp
+    })))
+  };
+  fetch("https://formspree.io/f/mzdygzop", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Accept": "application/json" },
+    body: JSON.stringify(data)
+  })
+  .then(res => {
+    if (res.ok) {
+      document.getElementById("submit-status").textContent = "✓ Your responses have been recorded. Thank you!";
+      document.getElementById("submit-status").style.color = "var(--green)";
+    } else {
+      document.getElementById("submit-status").textContent = "Please download your responses using the button below.";
+      document.getElementById("submit-status").style.color = "var(--accent)";
+    }
+  })
+  .catch(() => {
+    document.getElementById("submit-status").textContent = "Please download your responses using the button below.";
+    document.getElementById("submit-status").style.color = "var(--accent)";
+  });
+}
+
+function downloadCSV() {
+  const mainR = responses.filter(r => r.type !== "baseline" && r.type !== "baseline-rating");
+  const headers = ["trial_id","condition","selected_picture","caption","timestamp"];
+  const rows = mainR.map(r =>
+    [r.id, r.label, r.selected===0?"A":"B", '"'+r.caption.replace(/"/g,'""')+'"', r.timestamp].join(",")
+  );
+  const csv = [headers.join(","), ...rows].join("\n");
+  const blob = new Blob([csv], {type:"text/csv"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = "scope_responses.csv"; a.click();
+  URL.revokeObjectURL(url);
+}
+</script>
+
+</body>
+</html>
